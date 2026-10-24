@@ -6,6 +6,7 @@ import planeIcon from '../assets/icons/plane.svg'
 import walkIcon from '../assets/icons/walk.svg'
 import bikeIcon from '../assets/icons/bike.svg'
 import HomeEnergyForm from './HomeEnergyForm.tsx'
+import FoodForm from './FoodForm.tsx'
 
 const TABS = ['Travel & Transport', 'Home & Energy', 'Food & Diet'] as const
 type Tab = (typeof TABS)[number]
@@ -202,7 +203,7 @@ function LogPanel() {
       ) : tab === 'Home & Energy' ? (
         <HomeEnergyForm />
       ) : (
-        <p className="log-panel__empty">Coming soon</p>
+        <FoodForm />
       )}
     </section>
   )

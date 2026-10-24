@@ -6,16 +6,229 @@
 /* Sidebar */
 .sidebar {
   flex: 0 0 111.8px;
+  position: sticky;
+  top: 0;
+  height: 100svh;
   background: var(--green);
-  padding-top: 24px;
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
+}
+
+.nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 88px;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.nav__item:hover {
+  opacity: 1;
+}
+
+.nav__item--active {
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.nav__icon {
+  width: 28px;
+  height: 28px;
 }
 
 .sidebar__avatar {
-  width: 66.8px;
-  height: 66.8px;
+  width: 56px;
+  height: 56px;
+}
+
+/* Login */
+.login {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.login__card {
+  width: 100%;
+  max-width: 600px;
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 32px;
+  padding: 48px 72px;
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: 40px 40px 60px rgba(240, 228, 198, 0.74);
+  font-family: 'Poppins', var(--sans);
+}
+
+.login__brand {
+  margin: 0 0 8px;
+  font-family: var(--sans);
+  font-size: 54px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.login__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.login__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login__label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.login__label {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.login__forgot {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: #69debe;
+  cursor: pointer;
+}
+
+.login__input {
+  width: 100%;
+  height: 48px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  color: #344054;
+}
+
+.login__input::placeholder {
+  color: #98a2b3;
+}
+
+.login__input:focus {
+  outline: none;
+  border: 3px solid #d1e9ff;
+  padding: 10px 14px;
+}
+
+.login__password {
+  position: relative;
+}
+
+.login__password .login__input {
+  padding-right: 52px;
+}
+
+.login__password .login__input:focus {
+  padding-right: 50px;
+}
+
+.login__eye {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: flex;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.login__submit {
+  height: 52px;
+  background: var(--green);
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fcfcfd;
+  cursor: pointer;
+}
+
+.login__signup-text {
+  margin: 13px 0 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.login__signup {
+  width: 180px;
+  height: 60px;
+  margin-top: 4px;
+  background: var(--green);
+  border: none;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.login__forgot:focus-visible,
+.login__eye:focus-visible,
+.login__submit:focus-visible,
+.login__signup:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Placeholder pages */
+.placeholder {
+  padding: 24px 0 36px;
+  max-width: 858.8px;
+}
+
+.placeholder__text {
+  margin: 0 37.5px;
+  font-size: 18.8px;
 }
 
 /* Main column */
@@ -383,6 +596,7 @@
 }
 
 .mode:focus-visible,
+.nav__item:focus-visible,
 .tabs__tab:focus-visible,
 .calculate:focus-visible,
 .energy__more:focus-visible,
@@ -412,18 +626,57 @@
 }
 
 @media (max-width: 720px) {
+  /* The sidebar becomes a bottom tab bar so the forms keep the full width */
   .sidebar {
-    flex-basis: 72px;
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   }
 
+  .nav__list {
+    display: contents;
+  }
+
+  .nav__item {
+    width: auto;
+    min-width: 64px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .nav__icon,
   .sidebar__avatar {
-    width: 44px;
-    height: 44px;
+    width: 24px;
+    height: 24px;
   }
 
   .main {
-    padding: 20px 16px;
+    padding: 20px 16px 96px;
     gap: 24px;
+  }
+
+  .placeholder__text {
+    margin: 0 16px;
+  }
+
+  .login__card {
+    min-height: 0;
+    padding: 32px 20px;
+  }
+
+  .login__brand {
+    font-size: 40px;
+  }
+
+  .login__title {
+    font-size: 24px;
   }
 
   .header__greeting,
