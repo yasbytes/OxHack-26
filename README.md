@@ -11,3 +11,5 @@ Steps:
 2. npm -v (check if npm is there if not download npm [npm create vite@latest carbon-management-app -- --template react])
 3. cd carbon-management-app 
 4. npm run dev (once you see the local host open it)
+
+- the venv is whichever folder contains pyvenv.cfg
