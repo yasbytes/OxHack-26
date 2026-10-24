@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Design tokens from the Figma "Home page" frame */
 :root {
   --green: #5d994f;

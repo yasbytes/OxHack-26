@@ -72,3 +72,6 @@ function App() {
 }
 
 export default App
+
+// styling - Tailwind
+// data fetching - TanStack Query (React Query)
