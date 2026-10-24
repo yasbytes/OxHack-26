@@ -27,9 +27,9 @@ def carbon_net_worth(entries: list[dict], year: int | None = None) -> dict:
         if _parse_date(e["date"]).year != year:
             continue
         if e["type"] == "emission":
-            emissions += e["kg_co2e"]
+            emissions += float(e["kg_co2e"])
         elif e["type"] == "eco":
-            eco += e["kg_co2e"]
+            eco += float(e["kg_co2e"])
 
     return {
         "year": year,

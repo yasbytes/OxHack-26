@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from app.db import supabase
 from app.projections import monthly_net_worth, compare_years
 from app.ai import ask_gemini
@@ -23,6 +24,9 @@ def compare():
     rows = supabase.table("entries").select("*").execute().data
     return compare_years(rows)
 
+class AskBody(BaseModel):
+    prompt: str
+
 @app.post("/api/ask")
-def ask(body: dict):
-    return {"text": ask_gemini(body["prompt"])}
+def ask(body: AskBody):
+    return {"text": ask_gemini(body.prompt)}
