@@ -4,7 +4,6 @@ Project for OxHack 26
 -Python and Supabase for backend
 -Javascript and React + vite for frontend 
 
-Frontend local: http://localhost:5174/
 Steps:
 0. python -m venv OxHack
 1. OxHack\Scripts\Activate.ps1
