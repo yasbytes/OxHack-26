@@ -2,9 +2,7 @@
 // Swap these for backend data once emissions are calculated.
 
 export const YEAR_TONNES = 5.6
-// The yearly footprint the user has to stay under (UK average is about 10 t)
-export const LIMIT_TONNES = 6
-export const WEEKLY_BUDGET_KG = Math.round((LIMIT_TONNES * 1000) / 52)
+// The yearly limit and weekly budget come from the profile (profileStore.ts)
 
 // Last 8 weeks, oldest first; the final week is this week
 export const WEEKLY_KG = [92, 128, 110, 105, 134, 98, 121, 100]

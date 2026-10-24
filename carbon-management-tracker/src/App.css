@@ -647,105 +647,99 @@
   gap: 6px;
 }
 
-.chart-legend__swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  background: var(--green);
-}
-
-.chart-legend__swatch--over {
-  background: #c8553d;
-}
-
 .chart-legend__line {
   width: 18px;
   height: 2px;
   background: var(--text);
 }
 
-.columns {
-  padding-left: 36px;
-}
-
-.columns__plot {
-  position: relative;
-  height: 220px;
-}
-
-.columns__grid {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(106, 75, 75, 0.12);
-}
-
-.columns__tick {
-  position: absolute;
-  right: calc(100% + 8px);
-  top: -8px;
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-.columns__budget {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--text);
-  opacity: 0.6;
-  z-index: 1;
-}
-
-.columns__bars {
-  position: absolute;
-  inset: 0;
-  display: flex;
-}
-
-.columns__slot {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: default;
-}
-
-.columns__slot:focus-visible {
-  outline: 2px solid var(--green);
-  outline-offset: -2px;
-}
-
-.columns__bar {
-  width: 24px;
-  border-radius: 4px 4px 0 0;
+.chart-legend__line--actual {
+  height: 3px;
   background: var(--green);
 }
 
-.columns__bar--over {
-  background: #c8553d;
+.chart-legend__line--projected {
+  height: 0;
+  border-top: 3px dashed var(--green);
+  background: none;
 }
 
-.columns__bar--active {
-  filter: brightness(1.12);
+.chart-legend__line--over {
+  border-top-color: #c8553d;
 }
 
-.columns__labels {
-  display: flex;
-  margin-top: 6px;
+.line-chart {
+  position: relative;
+  width: 100%;
+}
+
+.line-chart svg {
+  display: block;
+  touch-action: pan-y;
+}
+
+.line-chart__grid {
+  stroke: rgba(106, 75, 75, 0.12);
+  stroke-width: 1;
+}
+
+.line-chart__tick {
   font-size: 12px;
+  fill: var(--text);
+  opacity: 0.75;
 }
 
-.columns__labels span {
-  flex: 1;
-  text-align: center;
-  opacity: 0.8;
+.line-chart__limit {
+  stroke: var(--text);
+  stroke-width: 2;
+  opacity: 0.6;
+}
+
+.line-chart__actual,
+.line-chart__projected {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line-chart__projected {
+  stroke-dasharray: 6 6;
+}
+
+.line-chart__projected--over {
+  stroke: #c8553d;
+}
+
+.line-chart__dot {
+  fill: var(--green);
+  stroke: #f4faec;
+  stroke-width: 2;
+}
+
+.line-chart__dot--over {
+  fill: #c8553d;
+}
+
+.line-chart__label {
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--text);
+}
+
+.line-chart__cross {
+  stroke: var(--text);
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
+.line-chart__tip {
+  transform: translateX(-50%);
+}
+
+.line-chart__summary {
+  margin-top: 10px;
 }
 
 .chart-tip {
@@ -836,22 +830,253 @@
   font-weight: 600;
 }
 
-/* Placeholder pages */
-.placeholder {
-  padding: 24px 0 36px;
-  max-width: var(--content-max);
+/* Friends */
+.friends__card {
+  padding: 16px 24px 22px;
 }
 
-.placeholder__text {
-  margin: 0 37.5px;
-  font-size: 18.8px;
+.friends__form {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) max-content;
+  justify-content: start;
+  align-items: end;
+  gap: 16px 24px;
+  margin-top: 12px;
+}
+
+.friends__form .calculate {
+  grid-area: auto;
+}
+
+.friends__error {
+  margin: 10px 0 0;
+  font-size: 15px;
+  color: #b0473a;
+}
+
+.friends__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friends__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  border-radius: 14px;
+}
+
+.friends__row--you {
+  background: #fff;
+  border: 2px solid var(--green);
+}
+
+.friends__rank {
+  flex: 0 0 28px;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.friends__pet {
+  flex: 0 0 auto;
+  height: 64px;
+  width: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.friends__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.friends__name {
+  font-size: 19px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.friends__mood {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.friends__bar {
+  max-width: 320px;
+  height: 8px;
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.friends__bar span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+
+.friends__bar--over span {
+  background: #c8553d;
+}
+
+.friends__numbers {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.friends__week {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.friends__unit {
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.friends__year {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.friends__remove-spacer {
+  flex: 0 0 66px;
+}
+
+.friends__empty {
+  margin: 12px 0 0;
+  font-size: 16px;
+}
+
+/* Profile */
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile__card {
+  padding: 16px 24px 22px;
+}
+
+.profile__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px 32px;
+  margin-top: 12px;
+}
+
+.profile__fields--narrow {
+  grid-template-columns: minmax(0, 320px);
+}
+
+.profile__diet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.profile__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.profile__options .mode {
+  min-height: 56px;
+  font-size: 17px;
+}
+
+.profile__text {
+  margin: 6px 0 0;
+  font-size: 17px;
+}
+
+.profile__limit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 18px 32px;
+  margin-top: 14px;
+}
+
+.profile__limit .field {
+  flex: 0 1 240px;
+}
+
+.profile__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 32px;
+}
+
+.profile__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.profile__actions .calculate {
+  grid-area: auto;
+}
+
+.profile__account {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.profile__button {
+  height: 46px;
+  padding: 0 22px;
+  background: #fff;
+  border: 1px solid var(--field-border);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.profile__button--danger {
+  border-color: #b0473a;
+  color: #b0473a;
+}
+
+.profile__button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.profile__hint {
+  display: block;
+  margin: 10px 0 0;
 }
 
 /* Main column */
 .main {
   flex: 1;
   min-width: 0;
-  padding: 22.5px 36px 19.5px;
+  padding: 22.5px clamp(16px, 3vw, 36px) 19.5px;
   display: flex;
   flex-direction: column;
   gap: 33px;
@@ -875,7 +1100,7 @@
 
 .header__greeting {
   margin: 0;
-  font-size: 52.5px;
+  font-size: clamp(30px, 4.5vw, 52.5px);
   font-weight: 700;
   line-height: 1.07;
   color: #fff;
@@ -906,7 +1131,7 @@
 }
 
 .weather__temp {
-  font-size: 52.5px;
+  font-size: clamp(30px, 4.5vw, 52.5px);
   font-weight: 700;
   color: #fff;
 }
@@ -922,19 +1147,21 @@
   margin: 0;
   font-family: var(--display);
   font-weight: 400;
-  font-size: 30px;
+  font-size: clamp(24px, 2.6vw, 30px);
   line-height: 1.35;
   color: var(--green);
 }
 
 .hero-row {
   display: flex;
+  /* The footprint and pet cards sit side by side, then stack when there's no room */
+  flex-wrap: wrap;
   gap: 16px;
   max-width: var(--content-max);
 }
 
 .net-worth {
-  flex: 1 1 0;
+  flex: 1 1 340px;
   min-width: 0;
   min-height: 150.8px;
   padding: 12px 15px;
@@ -972,7 +1199,7 @@
 /* Pet */
 .pet {
   position: relative;
-  flex: 1 1 0;
+  flex: 1 1 340px;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -1050,6 +1277,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  /* Leave room for the coin counter in the card's corner */
+  padding-right: 64px;
 }
 
 .pet__name {
@@ -1143,13 +1372,18 @@
   opacity: 0.8;
 }
 
+.net-worth__period {
+  font-size: 0.55em;
+  opacity: 0.75;
+}
+
 .net-worth__value {
   max-width: 387px;
   padding: 6px 12.8px;
   background: var(--field);
   border: 1px solid var(--field-border);
   border-radius: 16.5px;
-  font-size: 33.8px;
+  font-size: clamp(26px, 3vw, 33.8px);
   line-height: 1.25;
 }
 
@@ -1240,7 +1474,7 @@
   border: none;
   border-bottom: 5.2px solid transparent;
   font-family: var(--display);
-  font-size: 22.5px;
+  font-size: clamp(16px, 1.8vw, 22.5px);
   color: var(--green);
   cursor: pointer;
 }
@@ -1455,9 +1689,24 @@
 
 /* Smaller screens */
 @media (max-width: 900px) {
-  .header__greeting,
-  .weather__temp {
-    font-size: 40px;
+  /* Quick log gets a full row once the side-by-side layout gets cramped */
+  .quick-log-row {
+    flex-direction: column;
+  }
+
+  .quick-log {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 20px;
+  }
+
+  .quick-log__submit-card {
+    padding: 12px 16px;
+  }
+
+  .quick-log__submit {
+    width: 100%;
+    height: 47.2px;
   }
 
   .travel__fields {
@@ -1499,11 +1748,19 @@
     order: 1;
   }
 
+  /* Every tab gets an equal share of the bar so five still fit on small phones */
   .nav__item {
+    flex: 1 1 0;
     width: auto;
-    min-width: 64px;
-    padding: 6px 8px;
+    min-width: 0;
+    padding: 6px 2px;
     font-size: 12px;
+  }
+
+  .nav__profile {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .nav__icon,
@@ -1517,8 +1774,69 @@
     gap: 24px;
   }
 
-  .placeholder__text {
-    margin: 0 16px;
+  .profile__card {
+    padding: 14px 16px 18px;
+  }
+
+  .friends__card {
+    padding: 14px 16px 18px;
+  }
+
+  .friends__form {
+    grid-template-columns: 1fr;
+  }
+
+  .friends__row {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 10px 12px;
+  }
+
+  .friends__pet {
+    height: 48px;
+    width: 48px;
+  }
+
+  .friends__info {
+    flex-basis: calc(100% - 100px);
+  }
+
+  .friends__numbers {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+    margin-left: 40px;
+    margin-right: auto;
+  }
+
+  .friends__remove-spacer {
+    display: none;
+  }
+
+  .pet {
+    gap: 14px;
+    padding: 12px 16px;
+  }
+
+  .pet__art {
+    height: 96px;
+  }
+
+  .pet__art--sick .pet__img {
+    height: 65px;
+    margin-top: 31px;
+  }
+
+  .pet__name {
+    font-size: 21px;
+  }
+
+  .pet__top {
+    padding-right: 52px;
+  }
+
+  .profile__presets {
+    padding-top: 0;
   }
 
   .history .modes,
@@ -1568,14 +1886,6 @@
     padding: 14px 16px 16px;
   }
 
-  .columns__bar {
-    width: 16px;
-  }
-
-  .columns__labels {
-    font-size: 10px;
-  }
-
   .bars__row {
     grid-template-columns: 1fr;
     gap: 4px;
@@ -1599,30 +1909,13 @@
     font-size: 24px;
   }
 
-  .header__greeting,
-  .weather__temp {
-    font-size: 32px;
-  }
-
-  .card__title {
-    font-size: 28px;
-  }
-
   .weather__cloud {
     display: none;
-  }
-
-  .hero-row {
-    flex-direction: column;
   }
 
   .net-worth {
     min-height: 0;
     padding: 16px;
-  }
-
-  .net-worth__value {
-    font-size: 30px;
   }
 
   .quick-log__hint {
@@ -1639,27 +1932,7 @@
     min-width: 0;
   }
 
-  .quick-log {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px;
-  }
-
-  .quick-log-row {
-    flex-direction: column;
-  }
-
-  .quick-log__submit-card {
-    padding: 12px 16px;
-  }
-
-  .quick-log__submit {
-    width: 100%;
-    height: 47.2px;
-  }
-
   .tabs__tab {
-    font-size: 18px;
     padding: 0 8px 8px;
   }
 

@@ -1,7 +1,8 @@
-import { useState } from 'react'
 import { useLog } from '../logStore.ts'
-import { CATEGORY_KG, LIMIT_TONNES, WEEKLY_BUDGET_KG } from '../sampleData.ts'
+import { CATEGORY_KG } from '../sampleData.ts'
+import { useLimits } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
+import ProjectionChart from '../components/ProjectionChart.tsx'
 
 type CategoryKg = { id: (typeof CATEGORY_KG)[number]['id']; label: string; kg: number }[]
 
@@ -15,11 +16,6 @@ const TIPS: Record<(typeof CATEGORY_KG)[number]['id'], string> = {
 
 const DAY_MS = 86_400_000
 
-function weekLabel(weeksAgo: number) {
-  const d = new Date(Date.now() - weeksAgo * 7 * DAY_MS)
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-}
-
 // As YYYY-MM-DD, to compare with log entry dates
 function daysAgo(days: number) {
   return new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10)
@@ -32,110 +28,6 @@ function projectYear(yearTonnes: number) {
   const end = new Date(now.getFullYear() + 1, 0, 1)
   const elapsed = (now.getTime() - start.getTime()) / (end.getTime() - start.getTime())
   return yearTonnes / elapsed
-}
-
-function WeeklyChart({ weeklyKg }: { weeklyKg: number[] }) {
-  const [active, setActive] = useState<number | null>(null)
-  const weeks = weeklyKg.map((kg, i) => ({
-    kg,
-    label: i === weeklyKg.length - 1 ? 'This week' : weekLabel(weeklyKg.length - 1 - i),
-    over: kg > WEEKLY_BUDGET_KG,
-  }))
-  const top = Math.ceil((Math.max(...weeklyKg, WEEKLY_BUDGET_KG) * 1.1) / 50) * 50
-  const ticks = Array.from({ length: top / 50 + 1 }, (_, i) => i * 50)
-  const pct = (kg: number) => `${(kg / top) * 100}%`
-
-  return (
-    <>
-      <div className="chart-legend">
-        <span className="chart-legend__item">
-          <span className="chart-legend__swatch" aria-hidden="true" />
-          Under budget
-        </span>
-        <span className="chart-legend__item">
-          <span className="chart-legend__swatch chart-legend__swatch--over" aria-hidden="true" />
-          Over budget
-        </span>
-        <span className="chart-legend__item">
-          <span className="chart-legend__line" aria-hidden="true" />
-          Weekly budget ({WEEKLY_BUDGET_KG} kg)
-        </span>
-      </div>
-
-      <div className="columns" onMouseLeave={() => setActive(null)}>
-        <div className="columns__plot">
-          {ticks.map((t) => (
-            <div key={t} className="columns__grid" style={{ bottom: pct(t) }}>
-              <span className="columns__tick">{t}</span>
-            </div>
-          ))}
-          <div className="columns__budget" style={{ bottom: pct(WEEKLY_BUDGET_KG) }} />
-
-          <div className="columns__bars">
-            {weeks.map((w, i) => (
-              <button
-                key={w.label}
-                type="button"
-                className="columns__slot"
-                aria-label={`${w.label}: ${w.kg} kg${w.over ? ', over budget' : ''}`}
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
-                onBlur={() => setActive(null)}
-              >
-                <span
-                  className={`columns__bar${w.over ? ' columns__bar--over' : ''}${
-                    active === i ? ' columns__bar--active' : ''
-                  }`}
-                  style={{ height: pct(w.kg) }}
-                />
-                {active === i && (
-                  <span className="chart-tip" style={{ bottom: `calc(${pct(w.kg)} + 8px)` }}>
-                    <strong>{w.label}</strong>
-                    {w.kg} kg CO₂e
-                    <span className="chart-tip__sub">
-                      {w.over
-                        ? `${w.kg - WEEKLY_BUDGET_KG} kg over budget`
-                        : `${WEEKLY_BUDGET_KG - w.kg} kg under budget`}
-                    </span>
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="columns__labels" aria-hidden="true">
-          {weeks.map((w) => (
-            <span key={w.label}>{w.label}</span>
-          ))}
-        </div>
-      </div>
-
-      <details className="chart-table">
-        <summary>Show as table</summary>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Week</th>
-              <th scope="col">kg CO₂e</th>
-              <th scope="col">vs budget</th>
-            </tr>
-          </thead>
-          <tbody>
-            {weeks.map((w) => (
-              <tr key={w.label}>
-                <td>{w.label}</td>
-                <td>{w.kg}</td>
-                <td>
-                  {w.over ? '+' : '−'}
-                  {Math.abs(w.kg - WEEKLY_BUDGET_KG)} kg
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
-    </>
-  )
 }
 
 function Breakdown({ categoryKg }: { categoryKg: CategoryKg }) {
@@ -188,10 +80,11 @@ function InsightsPage() {
   const loggedThisWeek = log.filter((i) => i.date > weekAgo).length
 
   const { yearTonnes, weekKg, weeklyKg, categoryKg } = useFootprint()
+  const { limitTonnes, weeklyBudgetKg } = useLimits()
   const week = Math.round(weekKg)
   const projected = projectYear(yearTonnes)
-  const projectedOver = projected > LIMIT_TONNES
-  const weekOver = week > WEEKLY_BUDGET_KG
+  const projectedOver = projected > limitTonnes
+  const weekOver = week > weeklyBudgetKg
   const biggest = categoryKg.reduce((a, b) => (b.kg > a.kg ? b : a))
 
   return (
@@ -206,22 +99,22 @@ function InsightsPage() {
           <p className="stat__value">{week} kg</p>
           <p className="stat__sub">
             {weekOver
-              ? `${week - WEEKLY_BUDGET_KG} kg over your ${WEEKLY_BUDGET_KG} kg budget`
-              : `${WEEKLY_BUDGET_KG - week} kg under your ${WEEKLY_BUDGET_KG} kg budget`}
+              ? `${week - weeklyBudgetKg} kg over your ${weeklyBudgetKg} kg budget`
+              : `${weeklyBudgetKg - week} kg under your ${weeklyBudgetKg} kg budget`}
           </p>
         </section>
         <section className="card stat">
           <h2 className="stat__label">Year so far</h2>
           <p className="stat__value">{yearTonnes.toFixed(1)} t</p>
-          <p className="stat__sub">of your {LIMIT_TONNES} t yearly limit</p>
+          <p className="stat__sub">of {limitTonnes} t (your monthly limit × 12)</p>
         </section>
         <section className={`card stat${projectedOver ? ' stat--warn' : ''}`}>
           <h2 className="stat__label">On track for</h2>
           <p className="stat__value">{projected.toFixed(1)} t</p>
           <p className="stat__sub">
             {projectedOver
-              ? `⚠ ${(projected - LIMIT_TONNES).toFixed(1)} t over your limit at this rate`
-              : `✓ ${(LIMIT_TONNES - projected).toFixed(1)} t under your limit at this rate`}
+              ? `⚠ ${(projected - limitTonnes).toFixed(1)} t over your limit at this rate`
+              : `✓ ${(limitTonnes - projected).toFixed(1)} t under your limit at this rate`}
           </p>
         </section>
         <section className="card stat">
@@ -232,9 +125,9 @@ function InsightsPage() {
       </div>
 
       <section className="card chart-card">
-        <h2 className="card__title">Weekly footprint</h2>
-        <p className="chart-card__sub">kg CO₂e per week, last 8 weeks</p>
-        <WeeklyChart weeklyKg={weeklyKg} />
+        <h2 className="card__title">Year projection</h2>
+        <p className="chart-card__sub">Running total of t CO₂e this year, and where you're heading</p>
+        <ProjectionChart yearTonnes={yearTonnes} weeklyKg={weeklyKg} limitTonnes={limitTonnes} />
       </section>
 
       <div className="insights__row">

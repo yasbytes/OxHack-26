@@ -1,18 +1,28 @@
 import { useState, type FormEvent } from 'react'
 import eyeIcon from '../assets/icons/eye.svg'
+import { nameFromEmail, updateProfile, useProfile } from '../profileStore.ts'
 
 type Props = {
   onLogin: () => void
 }
 
 function LoginPage({ onLogin }: Props) {
+  const profile = useProfile()
+  const [signingUp, setSigningUp] = useState(false)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    // TODO: check the password with the backend once auth exists
+    // TODO: check the password (or create the account) with the backend once auth exists
+    if (signingUp) {
+      updateProfile({ name: name.trim(), email })
+    } else {
+      // Keep a name registered earlier on this device, otherwise guess one from the email
+      updateProfile({ email, name: profile.name || nameFromEmail(email) })
+    }
     onLogin()
   }
 
@@ -20,9 +30,28 @@ function LoginPage({ onLogin }: Props) {
     <div className="login">
       <form className="login__card" onSubmit={handleSubmit}>
         <p className="login__brand">Future Earth</p>
-        <h1 className="login__title">Login to your account</h1>
+        <h1 className="login__title">
+          {signingUp ? 'Create your account' : 'Login to your account'}
+        </h1>
 
         <div className="login__fields">
+          {signingUp && (
+            <div className="login__field">
+              <label className="login__label" htmlFor="login-name">
+                Name
+              </label>
+              <input
+                id="login-name"
+                className="login__input"
+                autoComplete="given-name"
+                required
+                placeholder="What should we call you?"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="login__field">
             <label className="login__label" htmlFor="login-email">
               Email
@@ -45,16 +74,18 @@ function LoginPage({ onLogin }: Props) {
                 Password
               </label>
               {/* TODO: password reset needs the backend */}
-              <button type="button" className="login__forgot">
-                Forgot ?
-              </button>
+              {!signingUp && (
+                <button type="button" className="login__forgot">
+                  Forgot ?
+                </button>
+              )}
             </div>
             <div className="login__password">
               <input
                 id="login-password"
                 className="login__input"
                 type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
+                autoComplete={signingUp ? 'new-password' : 'current-password'}
                 required
                 placeholder="Enter your password"
                 value={password}
@@ -74,14 +105,15 @@ function LoginPage({ onLogin }: Props) {
         </div>
 
         <button type="submit" className="login__submit">
-          Login now
+          {signingUp ? 'Create account' : 'Login now'}
         </button>
       </form>
 
-      <p className="login__signup-text">Don’t have an account?</p>
-      {/* No sign-up flow yet, so this lets people straight in for the demo */}
-      <button type="button" className="login__signup" onClick={onLogin}>
-        Sign up
+      <p className="login__signup-text">
+        {signingUp ? 'Already have an account?' : 'Don’t have an account?'}
+      </p>
+      <button type="button" className="login__signup" onClick={() => setSigningUp((s) => !s)}>
+        {signingUp ? 'Log in' : 'Sign up'}
       </button>
     </div>
   )

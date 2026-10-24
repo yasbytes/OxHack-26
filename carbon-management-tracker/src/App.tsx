@@ -5,16 +5,19 @@ import LoginPage from './pages/LoginPage.tsx'
 import HistoryPage from './pages/HistoryPage.tsx'
 import InsightsPage from './pages/InsightsPage.tsx'
 import Toast from './components/Toast.tsx'
-import PlaceholderPage from './pages/PlaceholderPage.tsx'
+import ProfilePage from './pages/ProfilePage.tsx'
+import FriendsPage from './pages/FriendsPage.tsx'
 import homeIcon from './assets/icons/home.svg'
 import insightsIcon from './assets/icons/insights.svg'
 import historyIcon from './assets/icons/history.svg'
+import friendsIcon from './assets/icons/friends.svg'
 import userIcon from './assets/icons/user.svg'
 
 const PAGES = [
   { id: 'home', label: 'Home', icon: homeIcon },
   { id: 'insights', label: 'Insights', icon: insightsIcon },
   { id: 'history', label: 'History', icon: historyIcon },
+  { id: 'friends', label: 'Friends', icon: friendsIcon },
 ] as const
 type Page = (typeof PAGES)[number]['id'] | 'profile'
 
@@ -76,10 +79,13 @@ function App() {
       {page === 'home' && <HomePage />}
       {page === 'insights' && <InsightsPage />}
       {page === 'history' && <HistoryPage onGoHome={() => setPage('home')} />}
+      {page === 'friends' && <FriendsPage />}
       {page === 'profile' && (
-        <PlaceholderPage
-          title="Profile"
-          description="Your name, household size and diet preference."
+        <ProfilePage
+          onLogout={() => {
+            setLoggedIn(false)
+            setPage('home')
+          }}
         />
       )}
 

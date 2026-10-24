@@ -24,6 +24,13 @@ export function useFootprint() {
   today.setHours(0, 0, 0, 0)
 
   const weeklyKg = [...WEEKLY_KG]
+  // Month so far: the sample weeks spread evenly over their days, plus logs
+  const dayOfMonth = today.getDate()
+  let monthKg = 0
+  for (let ago = 0; ago < dayOfMonth; ago++) {
+    const week = Math.floor(ago / 7)
+    if (week < WEEKLY_KG.length) monthKg += WEEKLY_KG[WEEKLY_KG.length - 1 - week] / 7
+  }
   const categoryKg = CATEGORY_KG.map((c) => ({ ...c, kg: c.kg as number }))
   let yearKg = YEAR_TONNES * 1000
 
@@ -34,12 +41,14 @@ export function useFootprint() {
       const week = Math.floor(ago / 7)
       if (week < weeklyKg.length) weeklyKg[weeklyKg.length - 1 - week] += kg
       if (category && ago < 28) category.kg += kg
+      if (ago < dayOfMonth) monthKg += kg
       if (ago <= dayOfYear(today)) yearKg += kg
     }
   }
 
   return {
     yearTonnes: yearKg / 1000,
+    monthKg,
     weekKg: weeklyKg[weeklyKg.length - 1],
     weeklyKg: weeklyKg.map((kg) => Math.round(kg)),
     categoryKg: categoryKg.map((c) => ({ ...c, kg: Math.round(c.kg) })),

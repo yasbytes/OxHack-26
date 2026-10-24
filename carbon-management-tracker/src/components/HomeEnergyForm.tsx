@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { addLogItem } from '../logStore.ts'
 import LogResult from './LogResult.tsx'
+import { useProfile } from '../profileStore.ts'
 import { billKg, homeEstimateKg, PERIOD_DAYS } from '../estimates.ts'
 
 const METHODS = [
@@ -86,7 +87,8 @@ function HomeEnergyForm() {
   const [unit, setUnit] = useState('£')
   const [period, setPeriod] = useState<Period>('month')
   const [date, setDate] = useState(today)
-  const [occupants, setOccupants] = useState('1')
+  const { household } = useProfile()
+  const [occupants, setOccupants] = useState(() => String(household))
   const [homeType, setHomeType] = useState(HOME_TYPES[0])
   const [bedrooms, setBedrooms] = useState('2')
   const [heating, setHeating] = useState(HEATING_TYPES[0])

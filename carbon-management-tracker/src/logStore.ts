@@ -60,6 +60,11 @@ export function updateLogItem(id: string, changes: Pick<LogItem, 'date' | 'title
   showToast('Changes saved')
 }
 
+export function clearLog() {
+  lastAddedId = null
+  save([])
+}
+
 export function deleteLogItem(id: string) {
   save(items.filter((i) => i.id !== id))
   showToast('Entry deleted')

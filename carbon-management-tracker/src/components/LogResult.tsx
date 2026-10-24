@@ -1,16 +1,17 @@
 import { clearLastAdded, useLastAdded } from '../logStore.ts'
 import { useFootprint } from '../footprint.ts'
 import { moodFor } from '../pet.ts'
-import { WEEKLY_BUDGET_KG } from '../sampleData.ts'
+import { useLimits } from '../profileStore.ts'
 
 // Sits in the form's spare space right after something is logged, so the
 // result is visible without scrolling up to the footprint card and pet
 function LogResult() {
   const item = useLastAdded()
   const { weekKg } = useFootprint()
+  const { weeklyBudgetKg } = useLimits()
   if (!item) return null
 
-  const mood = moodFor(weekKg, WEEKLY_BUDGET_KG)
+  const mood = moodFor(weekKg, weeklyBudgetKg)
   const week = Math.round(weekKg)
   const zero = item.kg === 0
 
@@ -37,12 +38,12 @@ function LogResult() {
               {item.kg < 10 ? item.kg.toFixed(1) : Math.round(item.kg)} kg CO₂e
             </p>
             <p className="result__text">
-              {Math.round((item.kg / WEEKLY_BUDGET_KG) * 100)}% of your weekly budget
+              {Math.round((item.kg / weeklyBudgetKg) * 100)}% of your weekly budget
             </p>
           </>
         )}
         <p className="result__text">
-          Week: <strong>{week}</strong> / {WEEKLY_BUDGET_KG} kg
+          Week: <strong>{week}</strong> / {weeklyBudgetKg} kg
         </p>
       </div>
 

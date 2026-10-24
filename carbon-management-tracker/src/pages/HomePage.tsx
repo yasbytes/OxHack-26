@@ -2,14 +2,14 @@ import { useState, type FormEvent } from 'react'
 import LogPanel from '../components/LogPanel.tsx'
 import PetCard from '../components/PetCard.tsx'
 import { addLogItem } from '../logStore.ts'
-import { COINS, LIMIT_TONNES, WEEKLY_BUDGET_KG } from '../sampleData.ts'
+import { COINS } from '../sampleData.ts'
+import { useLimits, useProfile } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
 import cloud1 from '../assets/icons/cloud-1.svg'
 import cloud2 from '../assets/icons/cloud-2.svg'
 import cloud4 from '../assets/icons/cloud-4.svg'
 
 // Placeholders until auth, weather and the backend are wired up
-const USER_NAME = 'name'
 const TEMPERATURE_C = 13
 
 function greeting() {
@@ -21,10 +21,11 @@ function greeting() {
 
 function HomePage() {
   const [quickLog, setQuickLog] = useState('')
-  const { yearTonnes, weekKg } = useFootprint()
-  // Two decimals so a single logged trip or meal visibly moves the number
-  const shownTonnes = yearTonnes.toFixed(2)
-  const overLimit = yearTonnes > LIMIT_TONNES
+  const { yearTonnes, monthKg, weekKg } = useFootprint()
+  const { name } = useProfile()
+  const { monthlyLimitKg, weeklyBudgetKg } = useLimits()
+  const month = Math.round(monthKg)
+  const overLimit = month > monthlyLimitKg
 
   function handleQuickLog(e: FormEvent) {
     e.preventDefault()
@@ -45,7 +46,7 @@ function HomePage() {
     <main className="main">
       <header className="header">
         <h1 className="header__greeting">
-          {greeting()} {USER_NAME} !
+          {greeting()}{name ? ` ${name}` : ''}!
         </h1>
         <div className="weather" aria-label={`${TEMPERATURE_C} degrees, cloudy`}>
           <div className="weather__cloud" aria-hidden="true">
@@ -64,7 +65,7 @@ function HomePage() {
         <section className="card net-worth">
           <h2 className="card__title">Your carbon footprint</h2>
           <div className="net-worth__value">
-            {shownTonnes} tons CO₂e
+            {month} kg CO₂e <span className="net-worth__period">this month</span>
           </div>
           <div className="limit">
             <div
@@ -72,22 +73,23 @@ function HomePage() {
               role="progressbar"
               aria-label="Footprint against your limit"
               aria-valuemin={0}
-              aria-valuemax={LIMIT_TONNES}
-              aria-valuenow={yearTonnes}
+              aria-valuemax={monthlyLimitKg}
+              aria-valuenow={month}
             >
               <div
                 className="limit__fill"
-                style={{ width: `${Math.min(yearTonnes / LIMIT_TONNES, 1) * 100}%` }}
+                style={{ width: `${Math.min(month / monthlyLimitKg, 1) * 100}%` }}
               />
             </div>
             <p className="limit__text">
               {overLimit
-                ? `${(yearTonnes - LIMIT_TONNES).toFixed(1)} t over your ${LIMIT_TONNES} t limit`
-                : `${(LIMIT_TONNES - yearTonnes).toFixed(1)} t left of your ${LIMIT_TONNES} t yearly limit`}
+                ? `${month - monthlyLimitKg} kg over your ${monthlyLimitKg} kg monthly limit`
+                : `${monthlyLimitKg - month} kg left of your ${monthlyLimitKg} kg monthly limit`}
+              {` · ${yearTonnes.toFixed(1)} t so far this year`}
             </p>
           </div>
         </section>
-        <PetCard weekKg={weekKg} budgetKg={WEEKLY_BUDGET_KG} coins={COINS} />
+        <PetCard weekKg={weekKg} budgetKg={weeklyBudgetKg} coins={COINS} />
       </div>
 
       <form className="quick-log-row" onSubmit={handleQuickLog}>
