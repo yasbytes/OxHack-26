@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { addLogItem } from '../logStore.ts'
 
 const METHODS = [
   { id: 'bill', label: 'From my bill' },
@@ -114,6 +115,26 @@ function HomeEnergyForm() {
     }
     // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
+    addLogItem({ kind: 'energy', date, ...energySummary() })
+  }
+
+  function energySummary() {
+    if (method === 'bill') {
+      const fuelLabel = [...MAIN_FUELS, ...OTHER_FUELS].find((f) => f.id === fuel)?.label
+      const periodLabel = PERIODS.find((p) => p.id === period)?.label.toLowerCase()
+      const shown = unit === '£' ? `£${amount}` : `${amount} ${unit}`
+      return {
+        title: `${fuelLabel} bill`,
+        detail: `${shown} for ${periodLabel} · split ${occupants} ways`,
+      }
+    }
+    if (method === 'estimate') {
+      return {
+        title: 'Home energy estimate',
+        detail: `${homeType}, ${bedrooms} bedrooms, ${heating} · ${occupants} people`,
+      }
+    }
+    return { title: 'Energy description', detail: text }
   }
 
   const fuelButtons = showMoreFuels ? [...MAIN_FUELS, ...OTHER_FUELS] : MAIN_FUELS

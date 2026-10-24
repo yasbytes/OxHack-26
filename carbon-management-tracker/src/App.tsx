@@ -2,6 +2,9 @@ import { useState } from 'react'
 import './App.css'
 import HomePage from './pages/HomePage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
+import HistoryPage from './pages/HistoryPage.tsx'
+import InsightsPage from './pages/InsightsPage.tsx'
+import Toast from './components/Toast.tsx'
 import PlaceholderPage from './pages/PlaceholderPage.tsx'
 import homeIcon from './assets/icons/home.svg'
 import insightsIcon from './assets/icons/insights.svg'
@@ -47,6 +50,15 @@ function App() {
   return (
     <div className="app">
       <nav className="sidebar" aria-label="Main">
+        <div className="nav__profile">
+          <NavItem
+            label="Profile"
+            icon={userIcon}
+            iconClass="sidebar__avatar"
+            active={page === 'profile'}
+            onClick={() => setPage('profile')}
+          />
+        </div>
         <div className="nav__list">
           {PAGES.map((p) => (
             <NavItem
@@ -59,36 +71,19 @@ function App() {
             />
           ))}
         </div>
-        <div className="nav__profile">
-          <NavItem
-            label="Profile"
-            icon={userIcon}
-            iconClass="sidebar__avatar"
-            active={page === 'profile'}
-            onClick={() => setPage('profile')}
-          />
-        </div>
       </nav>
 
       {page === 'home' && <HomePage />}
-      {page === 'insights' && (
-        <PlaceholderPage
-          title="Insights"
-          description="Your footprint over time, split by travel, energy and food."
-        />
-      )}
-      {page === 'history' && (
-        <PlaceholderPage
-          title="History"
-          description="Everything you've logged, so you can edit or delete entries."
-        />
-      )}
+      {page === 'insights' && <InsightsPage />}
+      {page === 'history' && <HistoryPage onGoHome={() => setPage('home')} />}
       {page === 'profile' && (
         <PlaceholderPage
           title="Profile"
           description="Your name, household size and diet preference."
         />
       )}
+
+      <Toast />
     </div>
   )
 }

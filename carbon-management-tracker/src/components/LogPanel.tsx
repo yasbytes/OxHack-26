@@ -7,6 +7,7 @@ import walkIcon from '../assets/icons/walk.svg'
 import bikeIcon from '../assets/icons/bike.svg'
 import HomeEnergyForm from './HomeEnergyForm.tsx'
 import FoodForm from './FoodForm.tsx'
+import { addLogItem } from '../logStore.ts'
 
 const TABS = ['Travel & Transport', 'Home & Energy', 'Food & Diet'] as const
 type Tab = (typeof TABS)[number]
@@ -67,6 +68,14 @@ function LogPanel() {
     }
     // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
+    const modeLabel = MODES.find((m) => m.id === mode)?.label ?? mode
+    const route = isCar ? `${distance} ${unit}` : `${origin} → ${destination}`
+    addLogItem({
+      kind: 'travel',
+      date,
+      title: isCar ? `${modeLabel} (${fuelType})` : modeLabel,
+      detail: [route, description].filter(Boolean).join(' · '),
+    })
   }
 
   return (

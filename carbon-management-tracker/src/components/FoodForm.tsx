@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { addLogItem } from '../logStore.ts'
 
 // Broad categories rather than ingredients, since most people don't know grams
 const CATEGORIES = [
@@ -51,6 +52,14 @@ function FoodForm() {
     }
     // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
+    const categoryLabel = CATEGORIES.find((c) => c.id === category)?.label
+    const portionLabel = PORTIONS.find((p) => p.servings === Number(servings))?.label
+    addLogItem({
+      kind: 'food',
+      date,
+      title: `${mealType}: ${categoryLabel}`,
+      detail: [`${portionLabel} portion`, description].filter(Boolean).join(' · '),
+    })
   }
 
   return (
