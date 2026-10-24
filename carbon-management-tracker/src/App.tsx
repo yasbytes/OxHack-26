@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import './App.css'
 import LogPanel from './components/LogPanel.tsx'
 import userIcon from './assets/icons/user.svg'
@@ -20,6 +20,12 @@ function greeting() {
 
 function App() {
   const [quickLog, setQuickLog] = useState('')
+
+  function handleQuickLog(e: FormEvent) {
+    e.preventDefault()
+    // TODO: send to the backend for Gemini to parse once the API exists
+    console.log('quick log', quickLog)
+  }
 
   return (
     <div className="app">
@@ -52,18 +58,26 @@ function App() {
           </div>
         </section>
 
-        <section className="card quick-log">
-          <label className="quick-log__label" htmlFor="quick-log">
-            <span className="card__title">Quick log</span>
-            <span className="quick-log__hint">what did you do today?</span>
-          </label>
-          <textarea
-            id="quick-log"
-            className="quick-log__input"
-            value={quickLog}
-            onChange={(e) => setQuickLog(e.target.value)}
-          />
-        </section>
+        <form className="quick-log-row" onSubmit={handleQuickLog}>
+          <section className="card quick-log">
+            <label className="quick-log__label" htmlFor="quick-log">
+              <span className="card__title">Quick log</span>
+              <span className="quick-log__hint">what did you do today?</span>
+            </label>
+            <textarea
+              id="quick-log"
+              className="quick-log__input"
+              required
+              value={quickLog}
+              onChange={(e) => setQuickLog(e.target.value)}
+            />
+          </section>
+          <div className="card quick-log__submit-card">
+            <button type="submit" className="quick-log__submit">
+              calculate
+            </button>
+          </div>
+        </form>
 
         <LogPanel />
       </main>
