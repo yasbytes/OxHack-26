@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { addLogItem } from '../logStore.ts'
+import LogResult from './LogResult.tsx'
+import { billKg, homeEstimateKg, PERIOD_DAYS } from '../estimates.ts'
 
 const METHODS = [
   { id: 'bill', label: 'From my bill' },
@@ -115,7 +117,19 @@ function HomeEnergyForm() {
     }
     // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
-    addLogItem({ kind: 'energy', date, ...energySummary() })
+    addLogItem({ kind: 'energy', date, ...energySummary(), ...energyKg() })
+  }
+
+  // "Describe it" needs Gemini to read the text, so it has no estimate yet
+  function energyKg() {
+    const people = Number(occupants)
+    if (method === 'bill') {
+      return { kg: billKg(fuel, Number(amount), unit, people), spreadDays: PERIOD_DAYS[period] }
+    }
+    if (method === 'estimate') {
+      return { kg: homeEstimateKg(homeType, bedrooms, heating, people), spreadDays: 30 }
+    }
+    return { kg: null }
   }
 
   function energySummary() {
@@ -331,6 +345,7 @@ function HomeEnergyForm() {
       )}
 
       <div className="energy__actions">
+        <LogResult />
         <button type="submit" className="calculate">
           calculate!
         </button>

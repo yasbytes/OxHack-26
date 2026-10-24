@@ -8,7 +8,6 @@ export const WEEKLY_BUDGET_KG = Math.round((LIMIT_TONNES * 1000) / 52)
 
 // Last 8 weeks, oldest first; the final week is this week
 export const WEEKLY_KG = [92, 128, 110, 105, 134, 98, 121, 100]
-export const WEEK_KG = WEEKLY_KG[WEEKLY_KG.length - 1]
 
 // Last 4 weeks split by section
 export const CATEGORY_KG = [

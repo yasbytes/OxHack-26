@@ -2,13 +2,8 @@ import { useState, type FormEvent } from 'react'
 import LogPanel from '../components/LogPanel.tsx'
 import PetCard from '../components/PetCard.tsx'
 import { addLogItem } from '../logStore.ts'
-import {
-  COINS,
-  LIMIT_TONNES,
-  WEEK_KG,
-  WEEKLY_BUDGET_KG,
-  YEAR_TONNES as NET_WORTH_TONNES,
-} from '../sampleData.ts'
+import { COINS, LIMIT_TONNES, WEEKLY_BUDGET_KG } from '../sampleData.ts'
+import { useFootprint } from '../footprint.ts'
 import cloud1 from '../assets/icons/cloud-1.svg'
 import cloud2 from '../assets/icons/cloud-2.svg'
 import cloud4 from '../assets/icons/cloud-4.svg'
@@ -16,7 +11,6 @@ import cloud4 from '../assets/icons/cloud-4.svg'
 // Placeholders until auth, weather and the backend are wired up
 const USER_NAME = 'name'
 const TEMPERATURE_C = 13
-const PET_NAME = 'Sprout'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -27,7 +21,10 @@ function greeting() {
 
 function HomePage() {
   const [quickLog, setQuickLog] = useState('')
-  const overLimit = NET_WORTH_TONNES > LIMIT_TONNES
+  const { yearTonnes, weekKg } = useFootprint()
+  // Two decimals so a single logged trip or meal visibly moves the number
+  const shownTonnes = yearTonnes.toFixed(2)
+  const overLimit = yearTonnes > LIMIT_TONNES
 
   function handleQuickLog(e: FormEvent) {
     e.preventDefault()
@@ -38,6 +35,8 @@ function HomePage() {
       date: new Date().toISOString().slice(0, 10),
       title: quickLog,
       detail: '',
+      // Free text needs Gemini to read it, so there's no estimate yet
+      kg: null,
     })
     setQuickLog('')
   }
@@ -65,7 +64,7 @@ function HomePage() {
         <section className="card net-worth">
           <h2 className="card__title">Your carbon footprint</h2>
           <div className="net-worth__value">
-            {NET_WORTH_TONNES} tons CO₂e
+            {shownTonnes} tons CO₂e
           </div>
           <div className="limit">
             <div
@@ -74,21 +73,21 @@ function HomePage() {
               aria-label="Footprint against your limit"
               aria-valuemin={0}
               aria-valuemax={LIMIT_TONNES}
-              aria-valuenow={NET_WORTH_TONNES}
+              aria-valuenow={yearTonnes}
             >
               <div
                 className="limit__fill"
-                style={{ width: `${Math.min(NET_WORTH_TONNES / LIMIT_TONNES, 1) * 100}%` }}
+                style={{ width: `${Math.min(yearTonnes / LIMIT_TONNES, 1) * 100}%` }}
               />
             </div>
             <p className="limit__text">
               {overLimit
-                ? `${(NET_WORTH_TONNES - LIMIT_TONNES).toFixed(1)} t over your ${LIMIT_TONNES} t limit`
-                : `${(LIMIT_TONNES - NET_WORTH_TONNES).toFixed(1)} t left of your ${LIMIT_TONNES} t yearly limit`}
+                ? `${(yearTonnes - LIMIT_TONNES).toFixed(1)} t over your ${LIMIT_TONNES} t limit`
+                : `${(LIMIT_TONNES - yearTonnes).toFixed(1)} t left of your ${LIMIT_TONNES} t yearly limit`}
             </p>
           </div>
         </section>
-        <PetCard name={PET_NAME} weekKg={WEEK_KG} budgetKg={WEEKLY_BUDGET_KG} coins={COINS} />
+        <PetCard weekKg={weekKg} budgetKg={WEEKLY_BUDGET_KG} coins={COINS} />
       </div>
 
       <form className="quick-log-row" onSubmit={handleQuickLog}>

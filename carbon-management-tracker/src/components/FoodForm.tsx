@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { addLogItem } from '../logStore.ts'
+import LogResult from './LogResult.tsx'
+import { foodKg } from '../estimates.ts'
 
 // Broad categories rather than ingredients, since most people don't know grams
 const CATEGORIES = [
@@ -59,6 +61,7 @@ function FoodForm() {
       date,
       title: `${mealType}: ${categoryLabel}`,
       detail: [`${portionLabel} portion`, description].filter(Boolean).join(' · '),
+      kg: foodKg(category, mealType, Number(servings)),
     })
   }
 
@@ -79,7 +82,7 @@ function FoodForm() {
         ))}
       </div>
 
-      <div className="energy__fields">
+      <div className="energy__fields food__fields">
         <label className="field">
           <span className="field__label">Meal</span>
           <select
@@ -132,6 +135,7 @@ function FoodForm() {
       </div>
 
       <div className="energy__actions">
+        <LogResult />
         <button type="submit" className="calculate">
           calculate meal
         </button>

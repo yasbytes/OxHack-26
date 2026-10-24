@@ -7,7 +7,9 @@ import walkIcon from '../assets/icons/walk.svg'
 import bikeIcon from '../assets/icons/bike.svg'
 import HomeEnergyForm from './HomeEnergyForm.tsx'
 import FoodForm from './FoodForm.tsx'
-import { addLogItem } from '../logStore.ts'
+import { addLogItem, clearLastAdded } from '../logStore.ts'
+import LogResult from './LogResult.tsx'
+import { travelKg } from '../estimates.ts'
 
 const TABS = ['Travel & Transport', 'Home & Energy', 'Food & Diet'] as const
 type Tab = (typeof TABS)[number]
@@ -75,6 +77,7 @@ function LogPanel() {
       date,
       title: isCar ? `${modeLabel} (${fuelType})` : modeLabel,
       detail: [route, description].filter(Boolean).join(' · '),
+      kg: travelKg(entry),
     })
   }
 
@@ -88,7 +91,10 @@ function LogPanel() {
             role="tab"
             aria-selected={tab === t}
             className={`tabs__tab${tab === t ? ' tabs__tab--active' : ''}`}
-            onClick={() => setTab(t)}
+            onClick={() => {
+              setTab(t)
+              clearLastAdded()
+            }}
           >
             {t}
           </button>
@@ -203,6 +209,8 @@ function LogPanel() {
                 onChange={(e) => setDescription(e.target.value)}
               />
             </label>
+
+            <LogResult />
 
             <button type="submit" className="calculate">
               calculate!
