@@ -24,6 +24,7 @@
 }
 
 .nav__item {
+  text-decoration: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -101,6 +102,10 @@
 }
 
 .login__fields {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -199,6 +204,10 @@
 }
 
 .login__signup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   width: 180px;
   height: 60px;
   margin-top: 4px;
@@ -218,6 +227,55 @@
 .login__signup:focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 2px;
+}
+
+/* History */
+.login__intro {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.login__hint {
+  margin: 0;
+  font-size: 13px;
+}
+
+.login__notice {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #e0eedb;
+  color: #294c26;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.login__notice--error {
+  background: #fff0ed;
+  color: #8d3024;
+}
+
+.login button:disabled,
+.login a[aria-disabled="true"],
+.account button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.account {
+  padding: 28px;
+  max-width: 600px;
+  overflow-wrap: anywhere;
+}
+
+.account__email {
+  margin: 12px 0;
+}
+
+.account__signout {
+  margin-top: 24px;
+  padding: 0 32px;
 }
 
 /* History */

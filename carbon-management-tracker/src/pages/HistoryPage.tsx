@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import ConfirmDialog from '../components/ConfirmDialog.tsx'
 import {
   deleteLogItem,
@@ -21,10 +22,6 @@ const KIND_LABELS: Record<LogKind, string> = {
   energy: 'Energy',
   food: 'Food',
   quick: 'Quick log',
-}
-
-type Props = {
-  onGoHome: () => void
 }
 
 function dayLabel(date: string) {
@@ -51,7 +48,8 @@ function groupByDay(items: LogItem[]) {
   return groups
 }
 
-function HistoryPage({ onGoHome }: Props) {
+function HistoryPage() {
+  const navigate = useNavigate()
   const items = useLog()
   const [filter, setFilter] = useState<LogKind | 'all'>('all')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -102,7 +100,7 @@ function HistoryPage({ onGoHome }: Props) {
         {items.length === 0 ? (
           <div className="history__empty">
             <p>Nothing logged yet. Entries you add on the home page will show up here.</p>
-            <button type="button" className="calculate" onClick={onGoHome}>
+            <button type="button" className="calculate" onClick={() => void navigate('/dashboard')}>
               log something
             </button>
           </div>

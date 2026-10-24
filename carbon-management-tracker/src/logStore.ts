@@ -17,24 +17,34 @@ export type LogItem = {
   kg: number | null
 }
 
-const STORAGE_KEY = 'carbon-log'
+let storageKey: string | null = null
 
 function load(): LogItem[] {
+  if (!storageKey) return []
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
+    const saved = localStorage.getItem(storageKey)
     return saved ? (JSON.parse(saved) as LogItem[]) : []
   } catch {
     return []
   }
 }
 
-let items = load()
+let items: LogItem[] = []
 const listeners = new Set<() => void>()
 
+export function setLogUser(userId: string | null) {
+  const nextKey = userId ? `carbon-log:${userId}` : null
+  if (storageKey === nextKey) return
+  storageKey = nextKey
+  items = load()
+  listeners.forEach((listener) => listener())
+}
+
 function save(next: LogItem[]) {
+  if (!storageKey) return
   items = next
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    localStorage.setItem(storageKey, JSON.stringify(items))
   } catch {
     // Storage can be blocked (private windows); the log still works for this visit
   }
