@@ -13,8 +13,10 @@ export type LogItem = {
   loggedAt: number
   title: string
   detail: string
-  // Filled in once the backend calculates emissions
+  // Front-end estimate for now; null when it can't be worked out (free text)
   kg: number | null
+  // Bills cover a stretch of days ending on `date`; everything else is 1 day
+  spreadDays?: number
 }
 
 let storageKey: string | null = null
@@ -29,7 +31,7 @@ function load(): LogItem[] {
   }
 }
 
-let items: LogItem[] = []
+let items = load()
 const listeners = new Set<() => void>()
 
 export function setLogUser(userId: string | null) {
@@ -51,15 +53,24 @@ function save(next: LogItem[]) {
   listeners.forEach((l) => l())
 }
 
-export function addLogItem(item: Omit<LogItem, 'id' | 'loggedAt' | 'kg'>) {
-  save([{ ...item, id: crypto.randomUUID(), loggedAt: Date.now(), kg: null }, ...items])
-  showToast('Saved to History')
+export function addLogItem(item: Omit<LogItem, 'id' | 'loggedAt'>) {
+  const id = crypto.randomUUID()
+  lastAddedId = id
+  save([{ ...item, id, loggedAt: Date.now() }, ...items])
+  showToast(
+    item.kg === null ? 'Saved to History' : `Saved · ${item.kg.toFixed(1)} kg CO₂e`,
+  )
 }
 
 export function updateLogItem(id: string, changes: Pick<LogItem, 'date' | 'title' | 'detail'>) {
-  // Edited entries need recalculating, so any old figure is cleared
-  save(items.map((i) => (i.id === id ? { ...i, ...changes, kg: null } : i)))
+  // Only the wording and date can change, so the estimate still applies
+  save(items.map((i) => (i.id === id ? { ...i, ...changes } : i)))
   showToast('Changes saved')
+}
+
+export function clearLog() {
+  lastAddedId = null
+  save([])
 }
 
 export function deleteLogItem(id: string) {
@@ -74,4 +85,14 @@ function subscribe(listener: () => void) {
 
 export function useLog() {
   return useSyncExternalStore(subscribe, () => items)
+}
+
+export function useLastAdded() {
+  const id = useSyncExternalStore(subscribe, () => lastAddedId)
+  return useLog().find((i) => i.id === id) ?? null
+}
+
+export function clearLastAdded() {
+  lastAddedId = null
+  listeners.forEach((l) => l())
 }

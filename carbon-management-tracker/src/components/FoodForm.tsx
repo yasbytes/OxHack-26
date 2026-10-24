@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { addLogItem } from '../logStore.ts'
+import LogResult from './LogResult.tsx'
+import { foodKg } from '../estimates.ts'
+import { DIETS, useProfile } from '../profileStore.ts'
 
 // Broad categories rather than ingredients, since most people don't know grams
 const CATEGORIES = [
@@ -35,7 +38,11 @@ function today() {
 }
 
 function FoodForm() {
-  const [category, setCategory] = useState<Category>('other_meat')
+  const { diet } = useProfile()
+  // Start on what the person usually eats, from their profile
+  const [category, setCategory] = useState<Category>(
+    () => DIETS.find((d) => d.id === diet)?.food ?? 'other_meat',
+  )
   const [mealType, setMealType] = useState('Dinner')
   const [servings, setServings] = useState('1')
   const [date, setDate] = useState(today)
@@ -59,6 +66,7 @@ function FoodForm() {
       date,
       title: `${mealType}: ${categoryLabel}`,
       detail: [`${portionLabel} portion`, description].filter(Boolean).join(' · '),
+      kg: foodKg(category, mealType, Number(servings)),
     })
   }
 
@@ -79,7 +87,7 @@ function FoodForm() {
         ))}
       </div>
 
-      <div className="energy__fields">
+      <div className="energy__fields food__fields">
         <label className="field">
           <span className="field__label">Meal</span>
           <select
@@ -132,6 +140,7 @@ function FoodForm() {
       </div>
 
       <div className="energy__actions">
+        <LogResult />
         <button type="submit" className="calculate">
           calculate meal
         </button>

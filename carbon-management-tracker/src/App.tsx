@@ -1,15 +1,45 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import Toast from './components/Toast'
+import { useState } from 'react'
+import './App.css'
+import HomePage from './pages/HomePage.tsx'
+import LoginPage from './pages/LoginPage.tsx'
+import HistoryPage from './pages/HistoryPage.tsx'
+import InsightsPage from './pages/InsightsPage.tsx'
+import Toast from './components/Toast.tsx'
+import PlaceholderPage from './pages/PlaceholderPage.tsx'
 import homeIcon from './assets/icons/home.svg'
 import insightsIcon from './assets/icons/insights.svg'
 import historyIcon from './assets/icons/history.svg'
+import friendsIcon from './assets/icons/friends.svg'
 import userIcon from './assets/icons/user.svg'
 
 const PAGES = [
-  { path: '/dashboard', label: 'Home', icon: homeIcon },
-  { path: '/dashboard/insights', label: 'Insights', icon: insightsIcon },
-  { path: '/dashboard/history', label: 'History', icon: historyIcon },
-]
+  { id: 'home', label: 'Home', icon: homeIcon },
+  { id: 'insights', label: 'Insights', icon: insightsIcon },
+  { id: 'history', label: 'History', icon: historyIcon },
+] as const
+type Page = (typeof PAGES)[number]['id'] | 'profile'
+
+type NavItemProps = {
+  label: string
+  icon: string
+  iconClass: string
+  active: boolean
+  onClick: () => void
+}
+
+function NavItem({ label, icon, iconClass, active, onClick }: NavItemProps) {
+  return (
+    <button
+      type="button"
+      aria-current={active ? 'page' : undefined}
+      className={`nav__item${active ? ' nav__item--active' : ''}`}
+      onClick={onClick}
+    >
+      <img src={icon} alt="" className={iconClass} />
+      <span className="nav__label">{label}</span>
+    </button>
+  )
+}
 
 function App() {
   return (
@@ -31,7 +61,17 @@ function App() {
           ))}
         </div>
       </nav>
-      <Outlet />
+
+      {page === 'home' && <HomePage />}
+      {page === 'insights' && <InsightsPage />}
+      {page === 'history' && <HistoryPage onGoHome={() => setPage('home')} />}
+      {page === 'profile' && (
+        <PlaceholderPage
+          title="Profile"
+          description="Your name, household size and diet preference."
+        />
+      )}
+
       <Toast />
     </div>
   )
