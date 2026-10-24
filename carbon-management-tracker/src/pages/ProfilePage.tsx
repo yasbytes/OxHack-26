@@ -1,35 +1,12 @@
-import { useAuth } from '../context/AuthContext'
-import Signout from '../components/Signout'
-
-function ProfilePage() {
-  const { session } = useAuth()
-  if (!session) return null
-  const user = session.user
-  const name = typeof user.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
-    ? user.user_metadata.full_name.trim() : user.email?.split('@')[0] || 'there'
-
-  return (
-    <main className="main">
-      <header className="header"><h1 className="header__greeting">Your account</h1></header>
-      <section className="card account">
-        <h2 className="card__title">{name}</h2>
-        <p className="account__email">{user.email}</p>
-        <p>Your activity history is saved for this account in this browser.</p>
-        <Signout />
-      </section>
-    </main>
-  )
-}
-
-export default ProfilePage
-
-
 import { useState, type FormEvent } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog.tsx'
+import Signout from '../components/Signout.tsx'
+import { useAuth } from '../context/AuthContext'
 import { clearLog } from '../logStore.ts'
 import { PET_NAME_KEY } from '../pet.ts'
 import {
   DIETS,
+  nameFromEmail,
   UK_AVERAGE_MONTHLY_KG,
   updateProfile,
   useProfile,
@@ -42,14 +19,15 @@ const LIMIT_PRESETS = [
   { kg: UK_AVERAGE_MONTHLY_KG, label: 'UK average' },
 ]
 
-type Props = {
-  onLogout: () => void
-}
-
-function ProfilePage({ onLogout }: Props) {
+function ProfilePage() {
+  const { session } = useAuth()
+  // The account email is the login, so it's shown here but changed through auth, not this form
+  const email = session?.user.email ?? ''
+  const accountName = session?.user.user_metadata.full_name
   const profile = useProfile()
-  const [name, setName] = useState(profile.name)
-  const [email, setEmail] = useState(profile.email)
+  const [name, setName] = useState(
+    profile.name || (typeof accountName === 'string' ? accountName.trim() : '') || nameFromEmail(email),
+  )
   const [household, setHousehold] = useState(String(profile.household))
   const [diet, setDiet] = useState<Diet>(profile.diet)
   const [limit, setLimit] = useState(String(profile.monthlyLimitKg))
@@ -61,7 +39,7 @@ function ProfilePage({ onLogout }: Props) {
     e.preventDefault()
     updateProfile({
       name: name.trim(),
-      email: email.trim(),
+      email,
       household: Number(household),
       diet,
       monthlyLimitKg: Number(limit),
@@ -105,10 +83,10 @@ function ProfilePage({ onLogout }: Props) {
               <input
                 className="field__input"
                 type="email"
-                autoComplete="email"
+                readOnly
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
               />
+              <span className="field__hint">The email you log in with.</span>
             </label>
           </div>
         </section>
@@ -199,9 +177,7 @@ function ProfilePage({ onLogout }: Props) {
       <section className="card profile__card">
         <h2 className="card__title">Account</h2>
         <div className="profile__account">
-          <button type="button" className="profile__button" onClick={onLogout}>
-            Log out
-          </button>
+          <Signout className="profile__button" />
           <button
             type="button"
             className="profile__button profile__button--danger"

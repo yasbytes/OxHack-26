@@ -2,7 +2,11 @@ import { useActionState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-function Signout() {
+type Props = {
+  className?: string
+}
+
+function Signout({ className = 'login__submit account__signout' }: Props) {
   const { signOutUser } = useAuth()
   const navigate = useNavigate()
 
@@ -17,7 +21,7 @@ function Signout() {
   return (
     <form action={submitAction} aria-busy={isPending}>
       {error && <p className="login__notice login__notice--error" role="alert">{error}</p>}
-      <button type="submit" className="login__submit account__signout" disabled={isPending}>
+      <button type="submit" className={className} disabled={isPending}>
         {isPending ? 'Logging out…' : 'Log out'}
       </button>
     </form>

@@ -10,7 +10,7 @@ it('keeps account histories separate and preserves anonymous demo data', () => {
   const { result } = renderHook(useLog)
   act(() => {
     setLogUser('alice')
-    addLogItem({ kind: 'travel', date: '2026-10-24', title: 'Train to work', detail: '10 km' })
+    addLogItem({ kind: 'travel', date: '2026-10-24', title: 'Train to work', detail: '10 km', kg: 0.4 })
   })
   expect(result.current).toHaveLength(1)
   act(() => setLogUser(null))
