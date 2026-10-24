@@ -11,7 +11,6 @@ import cloud2 from '../assets/icons/cloud-2.svg'
 import cloud4 from '../assets/icons/cloud-4.svg'
 
 // Placeholders until auth, weather and the backend are wired up
-const USER_NAME = 'name'
 const TEMPERATURE_C = 13
 
 function greeting() {
@@ -24,11 +23,12 @@ function greeting() {
 function HomePage() {
   const { session } = useAuth()
   const user = session?.user
-  const name = typeof user?.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
+  const accountName = typeof user?.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
     ? user.user_metadata.full_name.trim() : user?.email?.split('@')[0] || 'there'
   const [quickLog, setQuickLog] = useState('')
   const { yearTonnes, monthKg, weekKg } = useFootprint()
-  const { name } = useProfile()
+  const { name: profileName } = useProfile()
+  const name = profileName || accountName
   const { monthlyLimitKg, weeklyBudgetKg } = useLimits()
   const month = Math.round(monthKg)
   const overLimit = month > monthlyLimitKg
@@ -52,7 +52,7 @@ function HomePage() {
     <main className="main">
       <header className="header">
         <h1 className="header__greeting">
-          {greeting()} {USER_NAME} !
+          {greeting()}{name ? ` ${name}` : ''}!
         </h1>
         <div className="weather" aria-label={`${TEMPERATURE_C} degrees, cloudy`}>
           <div className="weather__cloud" aria-hidden="true">

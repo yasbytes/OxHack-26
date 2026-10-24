@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import HistoryPage from './pages/HistoryPage'
 import InsightsPage from './pages/InsightsPage'
 import ProfilePage from './pages/ProfilePage'
+import FriendsPage from './pages/FriendsPage'
 
 // Shared by createBrowserRouter in the app and createMemoryRouter in tests.
 export const routes: RouteObject[] = [
@@ -28,6 +29,7 @@ export const routes: RouteObject[] = [
           { index: true, element: <HomePage /> },
           { path: 'history', element: <HistoryPage /> },
           { path: 'insights', element: <InsightsPage /> },
+          { path: 'friends', element: <FriendsPage /> },
           { path: 'profile', element: <ProfilePage /> },
         ],
       },

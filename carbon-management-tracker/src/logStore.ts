@@ -32,6 +32,8 @@ function load(): LogItem[] {
 }
 
 let items = load()
+// The entry just logged this visit, so the log panel can show its result
+let lastAddedId: string | null = null
 const listeners = new Set<() => void>()
 
 export function setLogUser(userId: string | null) {
