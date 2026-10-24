@@ -1,0 +1,402 @@
+.app {
+  display: flex;
+  min-height: 100svh;
+}
+
+/* Sidebar */
+.sidebar {
+  flex: 0 0 111.8px;
+  background: var(--green);
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar__avatar {
+  width: 66.8px;
+  height: 66.8px;
+}
+
+/* Main column */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 22.5px 36px 19.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 33px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 858.8px;
+  margin-bottom: 2px;
+}
+
+.header__greeting {
+  margin: 0;
+  font-size: 52.5px;
+  font-weight: 700;
+  line-height: 1.07;
+  color: #fff;
+}
+
+.weather {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.weather__cloud {
+  position: relative;
+  width: 73.5px;
+  height: 54.8px;
+}
+
+.weather__cloud-inner {
+  position: relative;
+  transform: scale(0.75);
+  transform-origin: 0 0;
+}
+
+.weather__cloud img {
+  position: absolute;
+}
+
+.weather__temp {
+  font-size: 52.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border-radius: 16.5px;
+  box-shadow: var(--shadow);
+}
+
+.card__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.35;
+  color: var(--green);
+}
+
+.net-worth {
+  max-width: 552px;
+  min-height: 150.8px;
+  padding: 12px 15px;
+}
+
+.net-worth__value {
+  max-width: 387px;
+  padding: 6px 12.8px;
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  border-radius: 16.5px;
+  font-size: 33.8px;
+  line-height: 1.25;
+}
+
+.quick-log {
+  max-width: 756.8px;
+  padding: 14.2px 24.8px 14.2px 37.5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quick-log__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.quick-log__hint {
+  font-size: 21px;
+  color: var(--muted);
+}
+
+.quick-log__input {
+  flex: 1;
+  min-width: 0;
+  height: 80.2px;
+  padding: 12px 15px;
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  border-radius: 16.5px;
+  font-size: 18.8px;
+  resize: none;
+}
+
+/* Log panel */
+.log-panel {
+  max-width: 858.8px;
+  min-height: 306.8px;
+  padding-bottom: 24.8px;
+  margin-top: -7.5px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding-top: 13.5px;
+}
+
+.tabs__tab {
+  justify-self: start;
+  padding: 0 13.5px 7.5px;
+  background: none;
+  border: none;
+  border-bottom: 5.2px solid transparent;
+  font-family: var(--display);
+  font-size: 22.5px;
+  color: var(--green);
+  cursor: pointer;
+}
+
+.tabs__tab:nth-child(n + 2) {
+  justify-self: center;
+}
+
+.tabs__tab--active {
+  border-bottom-color: var(--green);
+}
+
+.log-panel__empty {
+  margin: 36px 37.5px 0;
+  font-size: 18.8px;
+}
+
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 17.2px 15px 0 37.5px;
+}
+
+.mode {
+  min-width: 101.2px;
+  height: 47.2px;
+  padding: 0 10.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--btn-border);
+  border-radius: 12px;
+  font-size: 18.8px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mode--selected {
+  background: var(--btn-selected);
+  border-color: var(--btn-selected-border);
+}
+
+.mode__icon {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 2px;
+}
+
+.travel__fields {
+  display: grid;
+  grid-template-columns: 171.8px 208.5px 1fr;
+  column-gap: 48.8px;
+  row-gap: 10.5px;
+  padding: 10.5px 37.5px 0 31.5px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7.5px;
+}
+
+.field--fuel,
+.field--origin {
+  grid-area: 1 / 1;
+}
+
+.field--distance,
+.field--destination {
+  grid-area: 1 / 2;
+}
+
+.field--date {
+  grid-area: 2 / 1;
+}
+
+.field--description {
+  grid-area: 2 / 2;
+}
+
+.field__label {
+  padding-left: 0;
+  font-size: 18.8px;
+  color: var(--green);
+}
+
+.field__row {
+  display: flex;
+  gap: 9.8px;
+}
+
+.field__input {
+  width: 100%;
+  height: 35.2px;
+  padding: 0 13.5px;
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  border-radius: 12px;
+  font-size: 18.8px;
+}
+
+.field__input--distance {
+  flex: 0 0 117.8px;
+}
+
+.field__input--unit {
+  flex: 0 0 81.8px;
+}
+
+.calculate {
+  grid-area: 2 / 3;
+  align-self: start;
+  justify-self: center;
+  width: 160.5px;
+  height: 47.2px;
+  background: var(--btn-primary);
+  border: 1px solid var(--btn-primary);
+  border-radius: 12px;
+  font-size: 22.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode:focus-visible,
+.tabs__tab:focus-visible,
+.calculate:focus-visible,
+.field__input:focus-visible,
+.quick-log__input:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Smaller screens */
+@media (max-width: 900px) {
+  .header__greeting,
+  .weather__temp {
+    font-size: 40px;
+  }
+
+  .travel__fields {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 32px;
+  }
+
+  .calculate {
+    grid-area: 3 / 1 / 4 / 3;
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    flex-basis: 72px;
+  }
+
+  .sidebar__avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .main {
+    padding: 20px 16px;
+    gap: 24px;
+  }
+
+  .header__greeting,
+  .weather__temp {
+    font-size: 32px;
+  }
+
+  .card__title {
+    font-size: 28px;
+  }
+
+  .weather__cloud {
+    display: none;
+  }
+
+  .net-worth {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .net-worth__value {
+    font-size: 30px;
+  }
+
+  .quick-log__hint {
+    font-size: 20px;
+  }
+
+  .tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tabs__tab,
+  .tabs__tab:nth-child(n + 2) {
+    justify-self: stretch;
+  }
+
+  .field__input--distance,
+  .field__input--unit {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .quick-log {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .tabs__tab {
+    font-size: 18px;
+    padding: 0 8px 8px;
+  }
+
+  .modes {
+    gap: 12px;
+    padding: 20px 16px 0;
+  }
+
+  .travel__fields {
+    grid-template-columns: 1fr;
+    padding: 14px 16px 0;
+  }
+
+  .field--fuel,
+  .field--origin,
+  .field--distance,
+  .field--destination,
+  .field--date,
+  .field--description,
+  .calculate {
+    grid-area: auto;
+  }
+}
