@@ -88,6 +88,57 @@ def compare_years(entries: list[dict]) -> dict:
         "improved": change < 0,
     }
 
+def monthly_net_worth(entries: list[dict], year: int | None = None) -> list[dict]:
+    """
+    12 monthly points for a line graph.
+    cumulative = running carbon net worth (emissions - eco) up to that month.
+    projected  = where the line is heading, based on your average pace so far.
+    """
+    today = date.today()
+    year = year or today.year
+
+    emissions = [0.0] * 12
+    eco = [0.0] * 12
+    for e in entries:
+        d = _parse_date(e["date"])
+        if d.year != year:
+            continue
+        if e["type"] == "emission":
+            emissions[d.month - 1] += float(e["kg_co2e"])
+        elif e["type"] == "eco":
+            eco[d.month - 1] += float(e["kg_co2e"])
+
+    #how many months have actual data so like
+    #all 12 for past years
+    if year < today.year:
+        months_done = 12
+    elif year == today.year:
+        months_done = today.month
+    else:
+        months_done = 0
+
+    points = []
+    running = 0.0
+    for i in range(12):
+        net = emissions[i] - eco[i]
+        running += net
+        points.append({
+            "month": calendar.month_abbr[i + 1],
+            "emissions": round(emissions[i], 2),
+            "eco": round(eco[i], 2),
+            "net": round(net, 2),
+            "cumulative": round(running, 2) if i < months_done else None,
+            "projected": None,
+        })
+
+    # projection line for the rest of the current year
+    if year == today.year and 0 < months_done < 12:
+        avg_month = points[months_done - 1]["cumulative"] / months_done
+        points[months_done - 1]["projected"] = points[months_done - 1]["cumulative"]
+        for i in range(months_done, 12):
+            points[i]["projected"] = round(avg_month * (i + 1), 2)
+
+    return points
 
 if __name__ == "__main__":
     sample = [
