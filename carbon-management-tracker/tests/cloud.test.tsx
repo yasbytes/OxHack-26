@@ -22,7 +22,13 @@ const db = vi.hoisted(() => {
     }
     return query
   }
-  return { state, client: { from: table, rpc: vi.fn() } }
+  const handlers: (() => void)[] = []
+  const channel = { on: (_e: string, _f: unknown, h: () => void) => { handlers.push(h); return channel }, subscribe: () => channel }
+  return {
+    state,
+    handlers,
+    client: { from: table, rpc: vi.fn(), channel: vi.fn(() => channel), removeChannel: vi.fn(() => Promise.resolve('ok')) },
+  }
 })
 vi.mock('../src/supabase-client', () => ({ default: db.client }))
 
@@ -31,7 +37,7 @@ import { getProfile, setProfileUser, updateProfile } from '../src/profileStore'
 import { setFriendsUser, useFriends } from '../src/friendsStore'
 import { buildYear } from '../src/monthly'
 
-beforeEach(() => { db.state.rows = {}; db.state.calls = [] })
+beforeEach(() => { db.state.rows = {}; db.state.calls = []; db.handlers.length = 0 })
 afterEach(() => {
   cleanup()
   setLogUser(null)
@@ -129,6 +135,20 @@ it("lists friends and requests from the database, rounding each friend's totals"
   await waitFor(() => expect(result.current.status).toBe('ready'))
   expect(result.current.friends).toEqual([{ id: 'b', name: 'Bob', username: 'bob', weekKg: 42, yearTonnes: 2.345, limitTonnes: 3 }])
   expect(result.current.requests).toEqual([{ id: 'c', name: 'Cat', username: null, direction: 'incoming' }])
+})
+
+it('shows a request as soon as someone sends one', async () => {
+  db.client.rpc.mockResolvedValue({ data: [], error: null })
+  const { result } = renderHook(useFriends)
+  act(() => setFriendsUser('bob'))
+  await waitFor(() => expect(result.current.status).toBe('ready'))
+  expect(db.client.channel).toHaveBeenCalledWith('friendships:bob')
+  db.client.rpc.mockResolvedValue({
+    data: [{ user_id: 'a', name: 'Alice', username: 'alice', status: 'incoming', week_kg: null, year_kg: null, monthly_limit_kg: null }],
+    error: null,
+  })
+  act(() => db.handlers.forEach((h) => h()))
+  await waitFor(() => expect(result.current.requests).toEqual([{ id: 'a', name: 'Alice', username: 'alice', direction: 'incoming' }]))
 })
 
 it('sends friend requests by username or email', async () => {

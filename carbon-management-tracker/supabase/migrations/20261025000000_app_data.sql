@@ -253,5 +253,17 @@ revoke all on public.profiles, public.log_items, public.shop_state, public.frien
 grant select, insert, update, delete on public.profiles, public.log_items, public.shop_state to authenticated;
 revoke insert, update, delete, truncate, references, trigger on public.friendships from authenticated;
 grant select on public.friendships to authenticated;
+
+-- Realtime tells the app when a request arrives; it only sends rows the
+-- "See own friendships" policy lets each person read
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (select 1 from pg_publication_tables
+                     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'friendships') then
+    alter publication supabase_realtime add table public.friendships;
+  end if;
+end
+$$;
 notify pgrst, 'reload schema';
 commit;
