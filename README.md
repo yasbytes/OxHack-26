@@ -6,7 +6,7 @@ Project for OxHack 26
 
 Steps:
 0. python -m venv OxHack
-1. OxHack\Scripts\Activate.ps1
+1. OxHack\Scripts\Activate.ps1 (Mac: source OxHack/bin/activate, and use python3 if python isn't found)
 2. npm -v (check if npm is there if not download npm [npm create vite@latest carbon-management-app -- --template react])
 3. cd carbon-management-app 
 4. npm run dev (once you see the local host open it)
