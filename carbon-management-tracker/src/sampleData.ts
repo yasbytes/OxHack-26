@@ -13,5 +13,3 @@ export const CATEGORY_KG = [
   { id: 'energy', label: 'Home & Energy', kg: 148 },
   { id: 'food', label: 'Food & Diet', kg: 95 },
 ] as const
-
-export const COINS = 120

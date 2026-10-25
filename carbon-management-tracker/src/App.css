@@ -136,7 +136,19 @@
   font-size: 16px;
   line-height: 1;
   color: #69debe;
+  text-decoration: none;
   cursor: pointer;
+}
+
+.login__forgot:hover {
+  text-decoration: underline;
+}
+
+.login__submit--link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .login__input {
@@ -1130,6 +1142,102 @@
   margin: 10px 0 0;
 }
 
+/* Shop */
+.shop__balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 700;
+  color: #fff;
+}
+
+.shop__coin {
+  width: 28px;
+  height: 28px;
+  box-shadow: inset 0 0 0 3px #d9a520;
+}
+
+.shop__card {
+  padding: 16px 24px 22px;
+}
+
+.shop__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shop__item {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 20px;
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  border-radius: 14px;
+}
+
+.shop__img {
+  flex: 0 0 120px;
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  /* Keep the pixel art crisp when it's scaled */
+  image-rendering: pixelated;
+}
+
+.shop__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shop__name {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--green);
+}
+
+.shop__desc {
+  margin: 0;
+  font-size: 16px;
+}
+
+.shop__price {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.shop__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.shop__actions .shop__buy {
+  min-width: 0;
+  margin-top: 0;
+  grid-area: auto;
+}
+
+.shop__actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Main column */
 .main {
   flex: 1;
@@ -1192,6 +1300,92 @@
   font-size: clamp(30px, 4.5vw, 52.5px);
   font-weight: 700;
   color: #fff;
+}
+
+.weather__temp--loading {
+  opacity: 0.6;
+}
+
+/* Sun, moon, rain, snow and lightning drawn around the clouds */
+.weather__sun,
+.weather__moon {
+  position: absolute;
+  top: 6px;
+  left: 16px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.weather__sun {
+  background: #ffd84d;
+  box-shadow: 0 0 0 6px rgba(255, 216, 77, 0.35);
+}
+
+/* A crescent: a pale disc with a bite taken out by its own shadow */
+.weather__moon {
+  box-shadow: inset -12px -4px 0 0 #fff8dc;
+  transform: rotate(-20deg);
+}
+
+/* Partly cloudy: the sun or moon peeks out from behind the top right */
+.weather__cloud--partly .weather__sun,
+.weather__cloud--partly .weather__moon {
+  top: -6px;
+  left: 34px;
+  width: 34px;
+  height: 34px;
+}
+
+.weather__cloud--fog .weather__cloud-inner {
+  opacity: 0.7;
+}
+
+.weather__cloud--rain .weather__cloud-inner,
+.weather__cloud--snow .weather__cloud-inner,
+.weather__cloud--storm .weather__cloud-inner {
+  transform: scale(0.65);
+}
+
+.weather__fall {
+  position: absolute;
+  top: 52px;
+  left: 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.weather__fall span {
+  display: block;
+}
+
+.weather__fall--rain span {
+  width: 4px;
+  height: 12px;
+  border-radius: 2px;
+  background: #7cc4f0;
+  transform: skewX(-15deg);
+}
+
+.weather__fall--snow span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.weather__fall span:nth-child(2) {
+  margin-top: 5px;
+}
+
+.weather__bolt {
+  position: absolute;
+  top: 34px;
+  left: 30px;
+  width: 16px;
+  height: 24px;
+  background: #ffd84d;
+  clip-path: polygon(45% 0, 100% 0, 60% 42%, 95% 42%, 20% 100%, 40% 55%, 5% 55%);
 }
 
 /* Cards */
@@ -1406,6 +1600,18 @@
   gap: 5px;
   font-size: 18px;
   font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pet__coins:hover {
+  text-decoration: underline;
+}
+
+.pet__coins:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .pet__coin {
@@ -1417,8 +1623,50 @@
 }
 
 .pet__mood,
-.pet__week {
+.pet__week,
+.pet__fed {
   margin: 0;
+}
+
+.pet__fed {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.pet__feed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pet__feed-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px 0 6px;
+  background: #fff;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pet__feed-button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.pet__feed-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .pet__mood {
@@ -1834,6 +2082,43 @@
 
   .profile__card {
     padding: 14px 16px 18px;
+  }
+
+  .shop__card {
+    padding: 14px 16px 18px;
+  }
+
+  .shop__item {
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .shop__img {
+    flex-basis: 80px;
+    width: 80px;
+    height: 80px;
+  }
+
+  .shop__info {
+    flex: 1 1 0;
+  }
+
+  .shop__desc {
+    font-size: 15px;
+  }
+
+  .shop__actions {
+    flex: 1 1 100%;
+    flex-direction: row;
+  }
+
+  .shop__actions button {
+    flex: 1;
+    height: 46px;
+    padding: 0 10px;
+    font-size: 16px;
+    white-space: nowrap;
   }
 
   .friends__card {

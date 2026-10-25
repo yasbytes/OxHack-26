@@ -12,6 +12,7 @@ import {
   useProfile,
   type Diet,
 } from '../profileStore.ts'
+import { resetShop } from '../shopStore.ts'
 import { showToast } from '../toast.ts'
 
 const LIMIT_PRESETS = [
@@ -49,6 +50,7 @@ function ProfilePage() {
 
   function resetDemo() {
     clearLog()
+    resetShop()
     try {
       localStorage.removeItem(PET_NAME_KEY)
     } catch {
@@ -187,14 +189,14 @@ function ProfilePage() {
           </button>
         </div>
         <p className="field__hint profile__hint">
-          Reset clears your logged history and your cat's name. Your profile stays.
+          Reset clears your logged history, coins, food and your cat's name. Your profile stays.
         </p>
       </section>
 
       {confirmReset && (
         <ConfirmDialog
           title="Reset demo data?"
-          message="This deletes everything in your History and your cat's name. This can't be undone."
+          message="This deletes everything in your History, your coins and food, and your cat's name. This can't be undone."
           confirmLabel="Reset"
           onConfirm={resetDemo}
           onCancel={() => setConfirmReset(false)}

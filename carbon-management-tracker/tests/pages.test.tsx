@@ -7,7 +7,7 @@ import { routes } from '../src/routes'
 afterEach(cleanup)
 // jsdom has no ResizeObserver, which the projection chart uses
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver
-const paths = ['/dashboard', '/dashboard/insights', '/dashboard/history', '/dashboard/friends', '/dashboard/profile']
+const paths = ['/dashboard', '/dashboard/insights', '/dashboard/history', '/dashboard/friends', '/dashboard/shop', '/dashboard/profile']
 for (const withData of [false, true]) for (const p of paths) {
   it(`${p} renders ${withData ? 'with old data' : 'fresh'}`, async () => {
     localStorage.clear()
