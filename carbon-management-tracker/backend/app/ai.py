@@ -14,9 +14,11 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 
-MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+# Lite answers these short prompts in about a second; the full Flash models
+# were often overloaded and took 20s+ or timed out
+MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 # Tried in order when the one before is overloaded, out of quota or too slow
-FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-flash-latest"]
+FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
 
 
 def ask_gemini(prompt: str, as_json: bool = False) -> str:
@@ -26,7 +28,7 @@ def ask_gemini(prompt: str, as_json: bool = False) -> str:
         # as_json forces Gemini to reply with valid JSON only, no extra text
         response_mime_type="application/json" if as_json else None,
         # ms; a slow model moves on to the next one instead of hanging the app
-        http_options=types.HttpOptions(timeout=20_000),
+        http_options=types.HttpOptions(timeout=10_000),
     )
     models = [MODEL, *(m for m in FALLBACK_MODELS if m != MODEL)]
     for i, model in enumerate(models):

@@ -45,7 +45,9 @@ Question: {question}"""
 
 def _parse_json(text: str) -> dict:
     text = re.sub(r"```json|```", "", text).strip()
-    return json.loads(text)
+    data = json.loads(text)
+    # Some models wrap the object in a list
+    return data[0] if isinstance(data, list) and data else data
 
 
 def plan_journey(question: str) -> dict:

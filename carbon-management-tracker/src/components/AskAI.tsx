@@ -77,53 +77,50 @@ function AskAI() {
       </form>
 
       {error && (
-        <section className="card" role="alert">
-          <p>{error}</p>
+        <section className="card ai-reply ai-reply--error" role="alert">
+          <p className="ai-reply__advice">{error}</p>
         </section>
       )}
 
       {reply && (
-        <section className="card" aria-live="polite">
+        <section className="card ai-reply" aria-live="polite">
+          <h2 className="card__title">
+            {reply.kind === 'journey' ? `${reply.origin} to ${reply.destination}` : 'Gemini says'}
+          </h2>
+
           {reply.kind === 'journey' && chosen && (
-            <p>
-              <strong>
-                {reply.origin} to {reply.destination} · {reply.distance_km} km
-              </strong>
-              <br />
-              {chosen.label}: {chosen.kg} kg CO₂e ·{' '}
-              {saved > 0
-                ? `saves ${saved} kg vs driving`
-                : saved < 0
-                  ? `adds ${Math.abs(saved)} kg vs driving`
-                  : 'same as driving'}
-            </p>
+            <div className="result ai-reply__result">
+              <div className="result__main">
+                <p className="result__value">{chosen.kg} kg CO₂e</p>
+                <p className="result__text">
+                  {chosen.label} · {reply.distance_km} km ·{' '}
+                  {saved > 0
+                    ? `saves ${saved} kg vs driving`
+                    : saved < 0
+                      ? `adds ${Math.abs(saved)} kg vs driving`
+                      : 'same as driving'}
+                </p>
+              </div>
+            </div>
           )}
 
-          <p>{reply.advice}</p>
+          <p className="ai-reply__advice">{reply.advice}</p>
 
           {reply.kind === 'journey' && reply.options && (
-            <details className="chart-table" open>
-              <summary>Compare options</summary>
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Option</th>
-                    <th scope="col">kg CO₂e</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reply.options.map((o) => (
-                    <tr key={o.mode}>
-                      <td>{o.label}</td>
-                      <td>{o.kg}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </details>
+            <ul className="ai-reply__options" aria-label="Compare options">
+              {reply.options.map((o) => (
+                <li
+                  key={o.mode}
+                  className={`ai-reply__option${o.mode === reply.chosen ? ' ai-reply__option--chosen' : ''}`}
+                >
+                  <span>{o.label}</span>
+                  <span>{o.kg} kg</span>
+                </li>
+              ))}
+            </ul>
           )}
 
-          <p className="chart-card__sub">Estimates only. Distances and emission factors are approximate.</p>
+          <p className="chart-card__sub ai-reply__note">Estimates only. Distances and emission factors are approximate.</p>
         </section>
       )}
     </>
