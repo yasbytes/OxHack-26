@@ -27,7 +27,7 @@ export function moodFor(weekKg: number, budgetKg: number): Mood {
 }
 
 // A recent meal lifts the mood one level, but never past thriving. A collapsed
-// cat is revived all the way to okay, every time it's fed.
+// cat is healed all the way to okay, every time it's fed.
 export function fedMood(mood: Mood, fed: boolean): Mood {
   if (!fed) return mood
   if (mood.id === 'sick') return MOODS[1]

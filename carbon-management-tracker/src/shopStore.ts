@@ -41,7 +41,7 @@ export type ShopState = {
   spent: number
   owned: Record<ShopItemId, number>
   // When the last meal stops cheering the cat up (ms since 1970). A fed cat
-  // also comes round from collapsing, as often as it's fed.
+  // also heals after collapsing, as often as it's fed.
   fedUntil: number
 }
 
@@ -170,7 +170,7 @@ export function feedItem(item: ShopItem, petName: string) {
     owned: { ...state.owned, [item.id]: state.owned[item.id] - 1 },
     fedUntil,
   })
-  showToast(collapsed ? `${name} came round!` : `${name} loved the ${item.name.toLowerCase()}!`)
+  showToast(collapsed ? `${name} is healing!` : `${name} loved the ${item.name.toLowerCase()}!`)
 }
 
 export function resetShop() {

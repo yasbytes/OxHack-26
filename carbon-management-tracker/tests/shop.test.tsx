@@ -55,12 +55,12 @@ it('a meal lifts the mood one level, but not past thriving', () => {
   expect(fedMood(MOODS[2], true)).toBe(MOODS[1])
   expect(fedMood(MOODS[0], true)).toBe(MOODS[0])
   expect(fedMood(MOODS[2], false)).toBe(MOODS[2])
-  // A collapsed cat is revived to okay whenever it's fed
+  // A collapsed cat is healed to okay whenever it's fed
   expect(fedMood(MOODS[4], true)).toBe(MOODS[1])
   expect(fedMood(MOODS[4], false)).toBe(MOODS[4])
 })
 
-it('food revives a collapsed cat every time', () => {
+it('food heals a collapsed cat every time', () => {
   const { result } = renderHook(useFed)
   act(() => { buyItem(treats); buyItem(treats) })
   // Way over this week's budget

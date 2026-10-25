@@ -132,7 +132,7 @@ function PetCard({ weekKg, budgetKg }: Props) {
         </p>
         {collapsed ? (
           <p className="pet__fed">
-            {fed ? `Revived for ${hours}. Feed them again to keep them going.` : 'Feed them to revive them.'}
+            {fed ? `Healing for ${hours}. Feed them again to keep them going.` : 'Feed them to heal them.'}
           </p>
         ) : (
           fed && <p className="pet__fed">Well fed · happier for {hours}</p>
