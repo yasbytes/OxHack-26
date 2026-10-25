@@ -22,7 +22,23 @@ Open the exact Local URL printed by Vite.
 5. Under Authentication > URL Configuration, add your local app origin (for example `http://localhost:5173`) to Redirect URLs. Set Site URL to your app's intended URL. Add the production URL before deploying.
 6. Use Sign up, confirm the email if required, then log in. Profile > Log out ends the session in this browser.
 
-The browser talks directly to Supabase Auth. Python is not needed for login. The Python backend has separate environment settings and is not wired to these forms.
+7. Create the app's tables: open the Supabase SQL editor, paste in `supabase/migrations/20261025000000_app_data.sql` and run it. It's safe to run again.
+
+The browser talks directly to Supabase for login and for its own data. Python is only needed for the quick log.
+
+## Backend (quick log)
+
+The quick log sends free text to the FastAPI app in `backend/`, which checks the user's Supabase login, asks Gemini to pick out the activities, and works out their kg with the same factors as the forms (`backend/app/factors.py`).
+
+```powershell
+cd backend
+cp .env.example .env   # then fill in the values
+pip install -r requirements.txt
+cd ..
+npm run api
+```
+
+`backend/.env` uses the same publishable key as the front end: the API acts as the signed-in user, so row level security still applies. In development Vite forwards `/api` to `http://localhost:8000`. A deployed front end sets `VITE_API_URL` to the API's address, and the API lists that origin in `ALLOWED_ORIGINS`. Without the API, quick logs are still saved, just without an estimate.
 
 Login errors appear in the form. Missing or invalid local settings disable submission and print a setup error in the development console instead of crashing the app.
 
@@ -50,11 +66,20 @@ The previous `src/useAuth.ts` and `src/pages/LoginPage.tsx` now only re-export t
 
 ## What is stored
 
-Supabase stores accounts and manages sessions. The SDK restores the signed-in session after a refresh. Names are saved as user metadata for display only.
+Each table in the migration has row level security, so an account can only read and change its own rows.
 
-Activity history is still browser-local, now stored separately by account ID. Existing anonymous demo history is left untouched under `carbon-log`; it is not automatically assigned to a newly created account. This is browser storage, not a secure database or cross-device sync. The dashboard's emissions figures remain sample data.
+| Data | Table |
+| --- | --- |
+| Activity history | `log_items` |
+| Profile, monthly limit and cat's name | `profiles` |
+| Shop spending, food owned, when the cat was fed | `shop_state` |
+| Friends and friend requests | `friendships` |
 
-Before connecting activity tables, enforce Row Level Security and policies using `auth.uid()`; a frontend login screen is not database authorization.
+The browser also keeps a copy per account, so the app opens instantly and keeps working if a request fails. The first time an account syncs, whatever that browser already had for it is uploaded. Friends are added by their account email and see each other's weekly and yearly totals once the request is accepted, never individual entries. The totals are worked out in the database (`friends_overview`).
+
+Coins are calculated from the log, so they're only as honest as what people log.
+
+Demo mode (no Supabase keys) keeps everything in the browser and has no friends, because there are no other accounts.
 
 ## Checks
 

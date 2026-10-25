@@ -5,11 +5,14 @@ import ProtectedRoute from './routes/ProtectedRoute'
 import { RouteErrorScreen } from './components/ErrorScreen'
 import Signin from './components/Signin'
 import Signup from './components/Signup'
+import ForgotPassword from './components/ForgotPassword'
+import ResetPassword from './components/ResetPassword'
 import HomePage from './pages/HomePage'
 import HistoryPage from './pages/HistoryPage'
 import InsightsPage from './pages/InsightsPage'
 import ProfilePage from './pages/ProfilePage'
 import FriendsPage from './pages/FriendsPage'
+import ShopPage from './pages/ShopPage'
 
 // Shared by createBrowserRouter in the app and createMemoryRouter in tests.
 export const routes: RouteObject[] = [
@@ -21,8 +24,11 @@ export const routes: RouteObject[] = [
         children: [
           { path: '/', element: <Signin /> },
           { path: '/signup', element: <Signup /> },
+          { path: '/forgot-password', element: <ForgotPassword /> },
         ],
       },
+      // Outside Home: the reset link signs the person in, and Home would send them on to the dashboard
+      { path: '/reset-password', element: <ResetPassword /> },
       {
         element: <ProtectedRoute />,
         children: [
@@ -34,6 +40,7 @@ export const routes: RouteObject[] = [
               { path: 'history', element: <HistoryPage /> },
               { path: 'insights', element: <InsightsPage /> },
               { path: 'friends', element: <FriendsPage /> },
+              { path: 'shop', element: <ShopPage /> },
               { path: 'profile', element: <ProfilePage /> },
             ],
           },

@@ -5,6 +5,7 @@ import homeIcon from './assets/icons/home.svg'
 import insightsIcon from './assets/icons/insights.svg'
 import historyIcon from './assets/icons/history.svg'
 import friendsIcon from './assets/icons/friends.svg'
+import shopIcon from './assets/icons/shop.svg'
 import userIcon from './assets/icons/user.svg'
 
 const PAGES = [
@@ -12,6 +13,7 @@ const PAGES = [
   { path: '/dashboard/insights', label: 'Insights', icon: insightsIcon },
   { path: '/dashboard/history', label: 'History', icon: historyIcon },
   { path: '/dashboard/friends', label: 'Friends', icon: friendsIcon },
+  { path: '/dashboard/shop', label: 'Shop', icon: shopIcon },
 ]
 
 const navClass = ({ isActive }: { isActive: boolean }) =>

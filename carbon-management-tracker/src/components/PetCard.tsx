@@ -1,17 +1,24 @@
 import { useState, type FormEvent } from 'react'
-import { loadPetName, moodFor, PET_NAME_KEY } from '../pet.ts'
+import { Link } from 'react-router-dom'
+import { fedMood, moodFor } from '../pet.ts'
+import { updateProfile, useProfile } from '../profileStore.ts'
+import { feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
 
 const MAX_NAME_LENGTH = 20
 
 type Props = {
   weekKg: number
   budgetKg: number
-  coins: number
 }
 
-function PetCard({ weekKg, budgetKg, coins }: Props) {
-  const mood = moodFor(weekKg, budgetKg)
-  const [name, setName] = useState(loadPetName)
+function PetCard({ weekKg, budgetKg }: Props) {
+  const { coins, owned } = useShop()
+  const { fed, hoursLeft, reviving, reviveUsed } = useFed()
+  const collapsed = moodFor(weekKg, budgetKg).id === 'sick'
+  const mood = fedMood(moodFor(weekKg, budgetKg), fed, reviving)
+  const hours = `${hoursLeft} more ${hoursLeft === 1 ? 'hour' : 'hours'}`
+  const food = SHOP_ITEMS.filter((item) => owned[item.id] > 0)
+  const { petName: name } = useProfile()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
 
@@ -25,21 +32,16 @@ function PetCard({ weekKg, budgetKg, coins }: Props) {
   function saveName(e: FormEvent) {
     e.preventDefault()
     const next = draft.trim()
-    setName(next)
     setEditing(false)
-    try {
-      localStorage.setItem(PET_NAME_KEY, next)
-    } catch {
-      // Storage can be blocked; the name still applies for this visit
-    }
+    updateProfile({ petName: next })
   }
 
   return (
     <section className="card pet" aria-label={`${shownName} is ${mood.label.toLowerCase()}`}>
-      <span className="pet__coins" aria-label={`${coins} coins`}>
+      <Link to="/dashboard/shop" className="pet__coins" aria-label={`${coins} coins, open the shop`}>
         <span className="pet__coin" aria-hidden="true" />
         {coins}
-      </span>
+      </Link>
       <div className={`pet__art pet__art--${mood.id}`}>
         <img src={mood.image} alt="" className="pet__img" />
         {mood.id === 'thriving' && (
@@ -87,6 +89,33 @@ function PetCard({ weekKg, budgetKg, coins }: Props) {
         <p className="pet__week">
           {Math.round(weekKg)} / {budgetKg} kg CO₂e this week
         </p>
+        {collapsed ? (
+          <p className="pet__fed">
+            {reviving
+              ? `Revived for ${hours}. Food won't work a second time.`
+              : reviveUsed
+                ? "Food can't revive them again. Cut this week's footprint to bring them round."
+                : 'Feed them to revive them. It only works once.'}
+          </p>
+        ) : (
+          fed && <p className="pet__fed">Well fed · happier for {hours}</p>
+        )}
+        {/* Once the revive is used, more food would only be wasted on a collapsed cat */}
+        {!(collapsed && reviveUsed) && food.length > 0 && (
+          <div className="pet__feed">
+            {food.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="pet__feed-button"
+                onClick={() => feedItem(item, name)}
+              >
+                <img src={item.image} alt="" className="pet__feed-img" />
+                Feed {item.name.toLowerCase()} ({owned[item.id]})
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

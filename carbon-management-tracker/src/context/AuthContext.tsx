@@ -3,7 +3,9 @@ import type { Session, User } from '@supabase/supabase-js'
 import supabase from '../supabase-client'
 import { authErrorMessage } from '../auth-errors'
 import { setLogUser } from '../logStore'
-import { nameFromEmail } from '../profileStore'
+import { setShopUser } from '../shopStore'
+import { nameFromEmail, setProfileUser } from '../profileStore'
+import { setFriendsUser } from '../friendsStore'
 
 type AuthResult = {
   success: boolean
@@ -14,12 +16,26 @@ type AuthContextValue = {
   session: Session | null | undefined
   error: string | null
   configured: boolean
+  // True after opening a password reset link, until a new password is saved
+  recovering: boolean
   signInUser: (email: string, password: string) => Promise<AuthResult>
   signUpUser: (email: string, password: string, name: string) => Promise<AuthResult>
   signOutUser: () => Promise<{ success: boolean; error?: string }>
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>
+  updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>
 }
 
+const DEMO_PASSWORD_ERROR = 'Demo mode has no passwords to reset. Log in with any password.'
+
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+// Points every store at the signed-in account's data
+function selectUser(userId: string | null) {
+  setLogUser(userId)
+  setShopUser(userId)
+  setProfileUser(userId)
+  setFriendsUser(userId)
+}
 
 // Demo mode: without Supabase keys, any email and password logs in and the
 // account lives only in this browser. Real auth takes over once keys are set.
@@ -58,20 +74,21 @@ function loadDemoSession() {
   return user ? demoSession(user) : null
 }
 
-// Same pattern as the course: one provider owns the session and all auth actions.
+// One provider owns the session and all auth actions.
 export function AuthContextProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null | undefined>(() => {
     if (supabase) return undefined
     const demo = loadDemoSession()
-    setLogUser(demo?.user.id ?? null)
+    selectUser(demo?.user.id ?? null)
     return demo
   })
   const [error, setError] = useState<string | null>(null)
+  const [recovering, setRecovering] = useState(false)
 
   function startDemoSession(user: DemoUser | null) {
     writeJson(DEMO_SESSION_KEY, user)
     const next = user ? demoSession(user) : null
-    setLogUser(next?.user.id ?? null)
+    selectUser(next?.user.id ?? null)
     setSession(next)
     return next
   }
@@ -83,13 +100,14 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 
     function update(nextSession: Session | null, nextError: string | null = null) {
       if (!active) return
-      setLogUser(nextSession?.user.id ?? null)
+      selectUser(nextSession?.user.id ?? null)
       setSession(nextSession)
       setError(nextError)
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       receivedEvent = true
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true)
       update(nextSession)
     })
 
@@ -155,14 +173,44 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function sendPasswordReset(email: string) {
+    if (!supabase) return { success: false, error: DEMO_PASSWORD_ERROR }
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (resetError) return { success: false, error: authErrorMessage(resetError) }
+      return { success: true }
+    } catch (failure) {
+      return { success: false, error: authErrorMessage(failure) }
+    }
+  }
+
+  async function updatePassword(password: string) {
+    if (!supabase) return { success: false, error: DEMO_PASSWORD_ERROR }
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password })
+      if (updateError) return { success: false, error: authErrorMessage(updateError) }
+      setRecovering(false)
+      return { success: true }
+    } catch (failure) {
+      return { success: false, error: authErrorMessage(failure) }
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ session, error, configured: !!supabase, signInUser, signUpUser, signOutUser }}>
+    <AuthContext.Provider
+      value={{
+        session, error, configured: !!supabase, recovering,
+        signInUser, signUpUser, signOutUser, sendPasswordReset, updatePassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
 }
 
-// The tutorial keeps the provider and its consumer hook together.
+// The provider and its consumer hook live together.
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)

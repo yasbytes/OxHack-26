@@ -15,17 +15,14 @@ export const MOODS = [
 ] as const
 export type Mood = (typeof MOODS)[number]
 
-export const PET_NAME_KEY = 'pet-name'
-
 export function moodFor(weekKg: number, budgetKg: number): Mood {
   const ratio = weekKg / budgetKg
   return MOODS.find((m) => ratio < m.max) ?? MOODS[MOODS.length - 1]
 }
 
-export function loadPetName() {
-  try {
-    return localStorage.getItem(PET_NAME_KEY) ?? ''
-  } catch {
-    return ''
-  }
+// A recent meal lifts the mood one level, but never past thriving. A collapsed
+// cat only comes round during its one revive (reviveUntil in shopStore.ts).
+export function fedMood(mood: Mood, fed: boolean, reviving = false): Mood {
+  if (mood.id === 'sick' ? !reviving : !fed) return mood
+  return MOODS[Math.max(0, MOODS.indexOf(mood) - 1)]
 }

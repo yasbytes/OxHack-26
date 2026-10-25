@@ -3,6 +3,7 @@ import { addLogItem } from '../logStore.ts'
 import LogResult from './LogResult.tsx'
 import { useProfile } from '../profileStore.ts'
 import { billKg, homeEstimateKg, PERIOD_DAYS } from '../estimates.ts'
+import { localDate } from '../dates.ts'
 
 const METHODS = [
   { id: 'bill', label: 'From my bill' },
@@ -75,9 +76,6 @@ export type HomeEnergyEntry =
       date: string
     }
 
-function today() {
-  return new Date().toISOString().slice(0, 10)
-}
 
 function HomeEnergyForm() {
   const [method, setMethod] = useState<Method>('bill')
@@ -86,7 +84,7 @@ function HomeEnergyForm() {
   const [amount, setAmount] = useState('')
   const [unit, setUnit] = useState('£')
   const [period, setPeriod] = useState<Period>('month')
-  const [date, setDate] = useState(today)
+  const [date, setDate] = useState(() => localDate())
   const { household } = useProfile()
   const [occupants, setOccupants] = useState(() => String(household))
   const [homeType, setHomeType] = useState(HOME_TYPES[0])
@@ -117,7 +115,6 @@ function HomeEnergyForm() {
     } else {
       entry = { method, text, date }
     }
-    // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
     addLogItem({ kind: 'energy', date, ...energySummary(), ...energyKg() })
   }
@@ -126,7 +123,8 @@ function HomeEnergyForm() {
   function energyKg() {
     const people = Number(occupants)
     if (method === 'bill') {
-      return { kg: billKg(fuel, Number(amount), unit, people), spreadDays: PERIOD_DAYS[period] }
+      const days = PERIOD_DAYS[period]
+      return { kg: billKg(fuel, Number(amount), unit, people, days), spreadDays: days }
     }
     if (method === 'estimate') {
       return { kg: homeEstimateKg(homeType, bedrooms, heating, people), spreadDays: 30 }

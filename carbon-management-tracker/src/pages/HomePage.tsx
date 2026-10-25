@@ -3,15 +3,13 @@ import { useAuth } from '../context/AuthContext'
 import LogPanel from '../components/LogPanel.tsx'
 import PetCard from '../components/PetCard.tsx'
 import { addLogItem } from '../logStore.ts'
-import { COINS } from '../sampleData.ts'
 import { useLimits, useProfile } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
-import cloud1 from '../assets/icons/cloud-1.svg'
-import cloud2 from '../assets/icons/cloud-2.svg'
-import cloud4 from '../assets/icons/cloud-4.svg'
-
-// Placeholders until auth, weather and the backend are wired up
-const TEMPERATURE_C = 13
+import WeatherBadge from '../components/WeatherBadge.tsx'
+import { localDate } from '../dates.ts'
+import { parseQuickLog } from '../api.ts'
+import { cloudFor } from '../cloud.ts'
+import { showToast } from '../toast.ts'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -26,6 +24,7 @@ function HomePage() {
   const accountName = typeof user?.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
     ? user.user_metadata.full_name.trim() : user?.email?.split('@')[0] || 'there'
   const [quickLog, setQuickLog] = useState('')
+  const [reading, setReading] = useState(false)
   const { yearTonnes, monthKg, weekKg } = useFootprint()
   const { name: profileName } = useProfile()
   const name = profileName || accountName
@@ -33,16 +32,33 @@ function HomePage() {
   const month = Math.round(monthKg)
   const overLimit = month > monthlyLimitKg
 
-  function handleQuickLog(e: FormEvent) {
+  async function handleQuickLog(e: FormEvent) {
     e.preventDefault()
-    // TODO: send to the backend for Gemini to parse once the API exists
-    console.log('quick log', quickLog)
+    const text = quickLog.trim()
+    const date = localDate()
+    // Gemini needs the backend and a real account; demo accounts save the note as it is
+    if (cloudFor(user?.id ?? null)) {
+      setReading(true)
+      try {
+        const entries = await parseQuickLog(text)
+        if (entries.length > 0) {
+          entries.forEach((entry) => addLogItem({ ...entry, date }))
+          if (entries.length > 1) showToast(`Saved ${entries.length} activities`)
+          setQuickLog('')
+          return
+        }
+      } catch {
+        // Saved below without an estimate instead
+      } finally {
+        setReading(false)
+      }
+    }
     addLogItem({
       kind: 'quick',
-      date: new Date().toISOString().slice(0, 10),
-      title: quickLog,
+      date,
+      title: text,
       detail: '',
-      // Free text needs Gemini to read it, so there's no estimate yet
+      // Nothing in it could be worked out, so there's no estimate
       kg: null,
     })
     setQuickLog('')
@@ -54,17 +70,7 @@ function HomePage() {
         <h1 className="header__greeting">
           {greeting()}{name ? ` ${name}` : ''}!
         </h1>
-        <div className="weather" aria-label={`${TEMPERATURE_C} degrees, cloudy`}>
-          <div className="weather__cloud" aria-hidden="true">
-            <div className="weather__cloud-inner">
-              <img src={cloud1} alt="" style={{ left: 0, top: 26 }} />
-              <img src={cloud4} alt="" style={{ left: 32, top: 26 }} />
-              <img src={cloud2} alt="" style={{ left: 23, top: 0 }} />
-              <img src={cloud1} alt="" style={{ left: 45, top: 24 }} />
-            </div>
-          </div>
-          <span className="weather__temp">{TEMPERATURE_C}°C</span>
-        </div>
+        <WeatherBadge />
       </header>
 
       <div className="hero-row">
@@ -95,7 +101,7 @@ function HomePage() {
             </p>
           </div>
         </section>
-        <PetCard weekKg={weekKg} budgetKg={weeklyBudgetKg} coins={COINS} />
+        <PetCard weekKg={weekKg} budgetKg={weeklyBudgetKg} />
       </div>
 
       <form className="quick-log-row" onSubmit={handleQuickLog}>
@@ -113,8 +119,8 @@ function HomePage() {
           />
         </section>
         <div className="card quick-log__submit-card">
-          <button type="submit" className="quick-log__submit">
-            calculate journey
+          <button type="submit" className="quick-log__submit" disabled={reading}>
+            {reading ? 'reading…' : 'calculate journey'}
           </button>
         </div>
       </form>

@@ -3,20 +3,24 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx'
 import Signout from '../components/Signout.tsx'
 import { useAuth } from '../context/AuthContext'
 import { clearLog } from '../logStore.ts'
-import { PET_NAME_KEY } from '../pet.ts'
 import {
   DIETS,
   nameFromEmail,
+  MAX_MONTHLY_LIMIT_KG,
+  MIN_MONTHLY_LIMIT_KG,
   UK_AVERAGE_MONTHLY_KG,
+  saveUsername,
   updateProfile,
+  USERNAME_PATTERN,
   useProfile,
   type Diet,
 } from '../profileStore.ts'
+import { resetShop } from '../shopStore.ts'
 import { showToast } from '../toast.ts'
 
 const LIMIT_PRESETS = [
-  { kg: 500, label: 'Our default' },
-  { kg: UK_AVERAGE_MONTHLY_KG, label: 'UK average' },
+  { kg: MAX_MONTHLY_LIMIT_KG, label: '20% below average' },
+  { kg: Math.round(UK_AVERAGE_MONTHLY_KG / 2), label: 'Half the average' },
 ]
 
 function ProfilePage() {
@@ -28,6 +32,12 @@ function ProfilePage() {
   const [name, setName] = useState(
     profile.name || (typeof accountName === 'string' ? accountName.trim() : '') || nameFromEmail(email),
   )
+  // Follows the saved username (which can arrive from the account after this
+  // page opens) until the user types
+  const [typedUsername, setUsername] = useState<string | null>(null)
+  const username = typedUsername ?? profile.username
+  const [usernameError, setUsernameError] = useState('')
+  const [saving, setSaving] = useState(false)
   const [household, setHousehold] = useState(String(profile.household))
   const [diet, setDiet] = useState<Diet>(profile.diet)
   const [limit, setLimit] = useState(String(profile.monthlyLimitKg))
@@ -35,8 +45,15 @@ function ProfilePage() {
 
   const weeklyKg = Math.round((Number(limit) * 12) / 52)
 
-  function handleSave(e: FormEvent) {
+  async function handleSave(e: FormEvent) {
     e.preventDefault()
+    if (username.trim()) {
+      setSaving(true)
+      const failure = await saveUsername(username)
+      setSaving(false)
+      setUsernameError(failure ?? '')
+      if (failure) return
+    }
     updateProfile({
       name: name.trim(),
       email,
@@ -47,15 +64,12 @@ function ProfilePage() {
     showToast('Profile saved')
   }
 
-  function resetDemo() {
+  function resetData() {
     clearLog()
-    try {
-      localStorage.removeItem(PET_NAME_KEY)
-    } catch {
-      // Nothing saved to remove
-    }
+    resetShop()
+    updateProfile({ petName: '' })
     setConfirmReset(false)
-    showToast('Demo data cleared')
+    showToast('Your data was cleared')
   }
 
   return (
@@ -79,6 +93,31 @@ function ProfilePage() {
               />
             </label>
             <label className="field">
+              <span className="field__label">Username</span>
+              <input
+                className="field__input"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="e.g. alex_k"
+                pattern={`@?${USERNAME_PATTERN}`}
+                title="3 to 20 lowercase letters, numbers or _"
+                value={username}
+                aria-invalid={!!usernameError}
+                onChange={(e) => {
+                  setUsername(e.target.value.toLowerCase())
+                  setUsernameError('')
+                }}
+              />
+              {usernameError ? (
+                <span className="friends__error" role="alert">
+                  {usernameError}
+                </span>
+              ) : (
+                <span className="field__hint">Friends add you with this.</span>
+              )}
+            </label>
+            <label className="field">
               <span className="field__label">Email</span>
               <input
                 className="field__input"
@@ -100,6 +139,7 @@ function ProfilePage() {
                 className="field__input"
                 type="number"
                 min="1"
+                max="20"
                 step="1"
                 required
                 value={household}
@@ -140,16 +180,17 @@ function ProfilePage() {
               <input
                 className="field__input"
                 type="number"
-                min="50"
-                max={UK_AVERAGE_MONTHLY_KG}
-                step="10"
+                min={MIN_MONTHLY_LIMIT_KG}
+                max={MAX_MONTHLY_LIMIT_KG}
+                step="1"
                 required
                 value={limit}
                 onChange={(e) => setLimit(e.target.value)}
               />
               <span className="field__hint">
-                About {weeklyKg} kg a week. Can't be more than the UK average (
-                {UK_AVERAGE_MONTHLY_KG} kg).
+                About {weeklyKg} kg a week. The UK average for travel, home and food is{' '}
+                {UK_AVERAGE_MONTHLY_KG} kg, so the most you can set is {MAX_MONTHLY_LIMIT_KG} kg (20%
+                below).
               </span>
             </label>
             <div className="profile__presets">
@@ -168,8 +209,8 @@ function ProfilePage() {
         </section>
 
         <div className="profile__actions">
-          <button type="submit" className="calculate">
-            save
+          <button type="submit" className="calculate" disabled={saving}>
+            {saving ? 'saving…' : 'save'}
           </button>
         </div>
       </form>
@@ -183,20 +224,20 @@ function ProfilePage() {
             className="profile__button profile__button--danger"
             onClick={() => setConfirmReset(true)}
           >
-            Reset demo data
+            Reset my data
           </button>
         </div>
         <p className="field__hint profile__hint">
-          Reset clears your logged history and your cat's name. Your profile stays.
+          Reset clears your logged history, coins, food and your cat's name. Your profile stays.
         </p>
       </section>
 
       {confirmReset && (
         <ConfirmDialog
-          title="Reset demo data?"
-          message="This deletes everything in your History and your cat's name. This can't be undone."
+          title="Reset your data?"
+          message="This deletes everything in your History, your coins and food, and your cat's name. This can't be undone."
           confirmLabel="Reset"
-          onConfirm={resetDemo}
+          onConfirm={resetData}
           onCancel={() => setConfirmReset(false)}
         />
       )}
