@@ -1,5 +1,6 @@
+import { createAccountSync } from './accountSync'
 import { useSyncExternalStore } from 'react'
-import { cloudFor, fetchSoon, pushChange, reportSyncError } from './cloud.ts'
+import { cloudFor, fetchSoon, reportSyncError } from './cloud.ts'
 
 // One profile per account: cached in this browser and, for real accounts, kept
 // in the profiles table
@@ -86,6 +87,7 @@ function clean(parsed: Partial<Profile> & { limitTonnes?: number }): Profile {
   return { ...DEFAULT_PROFILE, ...parsed }
 }
 
+const sync = createAccountSync('profiles')
 let userId: string | null = null
 let storageKey: string | null = null
 
@@ -132,6 +134,7 @@ export function setProfileUser(nextUserId: string | null) {
   const nextKey = nextUserId ? `profile:${nextUserId}` : null
   if (storageKey === nextKey) return
   userId = nextUserId
+  sync.setUser(nextUserId)
   storageKey = nextKey
   profile = load()
   listeners.forEach((l) => l())
@@ -143,12 +146,15 @@ async function pull() {
   const cloud = cloudFor(userId)
   if (!cloud) return
   const key = storageKey
+  const owner = userId
+  const revision = sync.revision
   try {
-    const { data, error } = await cloud.from('profiles').select('*').maybeSingle()
+    if (!await sync.flush() || storageKey !== key) return
+    const { data, error } = await cloud.from('profiles').select('*').eq('user_id', owner!).maybeSingle()
     if (error) throw error
-    if (storageKey !== key) return
+    if (storageKey !== key || sync.revision !== revision || sync.pending) return
     if (!data) {
-      if (profile !== DEFAULT_PROFILE) pushChange(userId, (c) => c.from('profiles').upsert(toRow(profile)))
+      if (profile !== DEFAULT_PROFILE) sync.enqueue({ type: 'upsert', row: toRow(profile) })
       return
     }
     const row = data as ProfileRow
@@ -169,9 +175,7 @@ async function pull() {
 export function updateProfile(changes: Partial<Profile>) {
   save({ ...profile, ...changes })
   const saved = profile
-  pushChange(userId, (cloud) =>
-    cloud.from('profiles').upsert({ ...toRow(saved), updated_at: new Date().toISOString() }),
-  )
+  sync.enqueue({ type: 'upsert', row: { ...toRow(saved), updated_at: new Date().toISOString() } })
 }
 
 export const USERNAME_PATTERN = '[a-z0-9_]{3,20}'
@@ -183,10 +187,13 @@ export async function saveUsername(input: string): Promise<string | null> {
   if (!new RegExp(`^${USERNAME_PATTERN}$`).test(username)) {
     return 'Usernames are 3 to 20 letters, numbers or _.'
   }
-  const cloud = cloudFor(userId)
+  const owner = userId
+  const cloud = cloudFor(owner)
   if (cloud) {
     try {
-      const { error } = await cloud.from('profiles').upsert({ username, updated_at: new Date().toISOString() })
+      if (!await sync.flush()) return 'Your profile has not synced yet. Try again when connected.'
+      if (owner !== userId) return 'Your account changed. Please try again.'
+      const { error } = await cloud.from('profiles').upsert({ user_id: owner, username, updated_at: new Date().toISOString() })
       // 23505 is Postgres's unique violation
       if (error?.code === '23505') return `@${username} is taken. Try another.`
       if (error) throw error
@@ -195,6 +202,7 @@ export async function saveUsername(input: string): Promise<string | null> {
       return "Couldn't save your username. Try again in a moment."
     }
   }
+  if (owner !== userId) return 'Your account changed. Please try again.'
   save({ ...profile, username })
   return null
 }

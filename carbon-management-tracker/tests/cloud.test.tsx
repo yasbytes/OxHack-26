@@ -6,16 +6,19 @@ vi.mock('../src/toast', () => ({ showToast: vi.fn() }))
 const db = vi.hoisted(() => {
   const state = { rows: {} as Record<string, unknown[]>, calls: [] as unknown[][] }
   function table(name: string) {
+    let first = 0
+    let last = Infinity
     const query = {
       select: () => query,
       order: () => query,
+      range: (from: number, to: number) => { first = from; last = to; return query },
       eq: (...args: unknown[]) => { state.calls.push([name, 'eq', ...args]); return query },
       maybeSingle: () => Promise.resolve({ data: state.rows[name]?.[0] ?? null, error: null }),
       insert: (row: unknown) => { state.calls.push([name, 'insert', row]); return Promise.resolve({ error: null }) },
       upsert: (row: unknown) => { state.calls.push([name, 'upsert', row]); return Promise.resolve({ error: null }) },
       update: (row: unknown) => { state.calls.push([name, 'update', row]); return query },
       delete: () => { state.calls.push([name, 'delete']); return query },
-      then: (resolve: (v: unknown) => void) => resolve({ data: state.rows[name] ?? [], error: null }),
+      then: (resolve: (v: unknown) => void) => resolve({ data: (state.rows[name] ?? []).slice(first, last + 1), error: null }),
     }
     return query
   }
@@ -26,6 +29,7 @@ vi.mock('../src/supabase-client', () => ({ default: db.client }))
 import { addLogItem, deleteLogItem, setLogUser, useLog } from '../src/logStore'
 import { getProfile, setProfileUser, updateProfile } from '../src/profileStore'
 import { setFriendsUser, useFriends } from '../src/friendsStore'
+import { buildYear } from '../src/monthly'
 
 beforeEach(() => { db.state.rows = {}; db.state.calls = [] })
 afterEach(() => {
@@ -46,23 +50,45 @@ it("loads an account's entries from the database", async () => {
   expect(result.current[0]).toEqual({ id: 'r1', kind: 'food', date: '2026-10-20', loggedAt: 5, title: 'Lunch: Vegan', detail: '', kg: 0.7 })
 })
 
+it('loads more than one page of activity into the graph', async () => {
+  db.state.rows.log_items = Array.from({ length: 1001 }, (_, i) => ({
+    id: `entry-${i}`, kind: 'travel', date: '2026-10-20', logged_at: i,
+    title: 'Train', detail: '', kg: 1, spread_days: null,
+  }))
+  const { result } = renderHook(useLog)
+  act(() => setLogUser('alice'))
+  await waitFor(() => expect(result.current).toHaveLength(1001))
+  expect(buildYear(result.current, new Date(2026, 9, 25)).soFarKg).toBe(1001)
+})
+
+it('does not restore cached entries after the account history was cleared elsewhere', async () => {
+  localStorage.setItem('synced:carbon-log:alice', 'yes')
+  localStorage.setItem('carbon-log:alice', JSON.stringify([
+    { id: 'old', kind: 'travel', date: '2026-10-20', loggedAt: 1, title: 'Train', detail: '', kg: 1 },
+  ]))
+  const { result } = renderHook(useLog)
+  act(() => setLogUser('alice'))
+  await waitFor(() => expect(result.current).toEqual([]))
+  expect(db.state.calls.some((c) => c[1] === 'upsert')).toBe(false)
+})
+
 it("uploads this browser's entries the first time an account syncs", async () => {
   localStorage.setItem('carbon-log:alice', JSON.stringify([
     { id: 'l1', kind: 'travel', date: '2026-10-20', loggedAt: 1, title: 'Bus', detail: '', kg: 1 },
   ]))
   setLogUser('alice')
-  await waitFor(() => expect(db.state.calls[0]?.[1]).toBe('upsert'))
-  expect(db.state.calls[0][2]).toEqual([
-    { id: 'l1', kind: 'travel', date: '2026-10-20', logged_at: 1, title: 'Bus', detail: '', kg: 1, spread_days: null },
-  ])
+  await waitFor(() => expect(db.state.calls.some((c) => c[1] === 'upsert')).toBe(true))
+  expect(db.state.calls.find((c) => c[1] === 'upsert')![2]).toEqual(
+    { id: 'l1', kind: 'travel', date: '2026-10-20', logged_at: 1, title: 'Bus', detail: '', kg: 1, spread_days: null, user_id: 'alice' },
+  )
 })
 
 it('writes new and deleted entries to the database', async () => {
   setLogUser('alice')
   await new Promise((r) => setTimeout(r, 10))
   addLogItem({ kind: 'travel', date: '2026-10-24', title: 'Train', detail: '', kg: 0.4 })
-  await waitFor(() => expect(db.state.calls.some((c) => c[1] === 'insert')).toBe(true))
-  const inserted = db.state.calls.find((c) => c[1] === 'insert')![2] as { id: string }
+  await waitFor(() => expect(db.state.calls.some((c) => c[1] === 'upsert')).toBe(true))
+  const inserted = db.state.calls.find((c) => c[1] === 'upsert')![2] as { id: string }
   deleteLogItem(inserted.id)
   await waitFor(() => expect(db.state.calls).toContainEqual(['log_items', 'eq', 'id', inserted.id]))
 })

@@ -40,7 +40,7 @@ npm run api
 
 `backend/.env` uses the same publishable key as the front end: the API acts as the signed-in user, so row level security still applies. In development Vite forwards `/api` to `http://localhost:8000`. A deployed front end sets `VITE_API_URL` to the API's address, and the API lists that origin in `ALLOWED_ORIGINS`. Without the API, quick logs are still saved, just without an estimate.
 
-Login errors appear in the form. Missing or invalid local settings disable submission and print a setup error in the development console instead of crashing the app.
+Login errors appear in the form. With no usable Supabase configuration, the app runs in browser-only demo mode; those demo accounts do not access Supabase or other users. Use the real project configuration for account testing.
 
 ## Following the video
 
@@ -60,9 +60,9 @@ This app follows the auth and routing structure in [Intro to Supabase](https://w
 
 `main.tsx` wraps `RouterProvider` in `AuthContextProvider`. Forms use `useActionState`, read `FormData`, and call auth functions from `useAuth()`. Supabase calls live in the provider; `src/supabase-client.ts` remains the single client configuration file.
 
-Public URLs are `/` (sign in) and `/signup`. Private URLs are `/dashboard`, `/dashboard/history`, `/dashboard/insights`, and `/dashboard/profile`. The app preserves a requested private URL through login, and waits for the initial session check before redirecting. A static production host must rewrite these paths to `index.html` so refreshes work; Vite handles this during development.
+Public URLs are `/` (sign in), `/signup`, `/forgot-password`, and `/reset-password`. Private URLs are `/dashboard`, `/dashboard/history`, `/dashboard/insights`, `/dashboard/profile`, `/dashboard/friends`, and `/dashboard/shop`. The app preserves a requested private URL through login, and waits for the initial session check before redirecting. A static production host must rewrite these paths to `index.html` so refreshes work; Vite handles this during development.
 
-The previous `src/useAuth.ts` and `src/pages/LoginPage.tsx` now only re-export the new implementations for compatibility. Work in `context/AuthContext.tsx` and `components/Signin.tsx` when following the video. The tutorial's RLS, database storage, profile tables, and triggers are still future work; frontend route guards do not replace those policies.
+Work in `context/AuthContext.tsx` and `components/Signin.tsx` when following the video. Database tables, row-level security and friend functions are defined in `supabase/migrations/20261025000000_app_data.sql`. Run that script in your project before testing data storage. Frontend route guards do not replace the database policies.
 
 ## What is stored
 
@@ -75,9 +75,23 @@ Each table in the migration has row level security, so an account can only read 
 | Shop spending, food owned, when the cat was fed | `shop_state` |
 | Friends and friend requests | `friendships` |
 
-The browser also keeps a copy per account, so the app opens instantly and keeps working if a request fails. The first time an account syncs, whatever that browser already had for it is uploaded. Friends are added by their account email and see each other's weekly and yearly totals once the request is accepted, never individual entries. The totals are worked out in the database (`friends_overview`).
+The browser also keeps a copy per account, so the app opens instantly and keeps working if a request fails. The first time an account syncs, whatever that browser already had for it is uploaded. Friends are added by their username or account email and see each other's weekly and yearly totals once the request is accepted, never individual entries. The totals are worked out in the database (`friends_overview`).
 
-Coins are calculated from the log, so they're only as honest as what people log.
+Failed log, profile and shop writes are queued per account in browser storage and retried on login, a new change, reconnecting, or returning to the tab. Keep that browser data until pending changes have synced. Every write explicitly includes its account ID, and failed requests do not get discarded when remote data is loaded. Account history loads in pages so graphs include more than 1,000 entries.
+
+## Using the features
+
+- **Graphs:** log journeys, meals or energy usage on Home. History lets you change the date/details or delete an entry. Insights uses those same dated entries for monthly totals and a year-end projection. Energy bills spread over the days they cover. Entries with no estimate remain in History but contribute neither a footprint estimate nor a reward. The projection extrapolates the recent logging pace; missing logs can understate it.
+- **Friends:** set a unique username in Profile. On Friends, enter someone else's username or email. After they accept, the leaderboard compares each person's weekly emissions against their own budget. Only aggregate totals are shared.
+- **Shop:** coins reward completed logged days under budget. Buy food in Shop, then feed it to your cat on Home. Spending, inventory and feeding times are saved per account.
+
+Coins are calculated from self-reported logs and the prototype wallet is client-managed; it is not suitable for real-money purchases or tamper-proof competitions. Profile and wallet sync use the last saved state, so avoid editing the same account on two devices at once. Friend lists refresh when the page opens or after a friend action.
+
+## Verify the cloud setup
+
+After running the SQL script, reload the app and sign in with a confirmed account. Add a journey, reload and check History and Insights. Buy food and reload to check inventory. Use two confirmed accounts in separate browser profiles to test sending and accepting a friend request. Before accepting, no footprint totals should be visible. Account A's individual log must never appear in account B's History.
+
+A `PGRST205` or `PGRST202` error means a required table/function is missing from the API schema: run the migration, then reload. The script runs in a transaction and can be rerun against its own schema. Authentication email delivery and redirect allowlists must be configured in the Supabase dashboard.
 
 Demo mode (no Supabase keys) keeps everything in the browser and has no friends, because there are no other accounts.
 

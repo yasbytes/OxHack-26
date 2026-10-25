@@ -32,5 +32,8 @@ export function reportSyncError(error: unknown) {
   if (import.meta.env.DEV) console.warn('Sync failed', error)
   if (Date.now() - lastWarned < 30_000) return
   lastWarned = Date.now()
-  showToast("Couldn't reach your account. Changes are kept on this device for now.")
+  const code = typeof error === 'object' && error && 'code' in error ? error.code : null
+  showToast(code === 'PGRST205' || code === 'PGRST202'
+    ? 'The database setup is missing. Run the Supabase migration, then reload this page.'
+    : "Couldn't reach your account. Changes are kept on this device; reconnect or return to this tab to retry.")
 }

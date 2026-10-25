@@ -1,3 +1,4 @@
+import { createAccountSync } from './accountSync'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { showToast } from './toast.ts'
 import { coinsEarned, START_COINS } from './coins.ts'
@@ -5,7 +6,7 @@ import { getLogItems, useLog } from './logStore.ts'
 import { getProfile, useProfile, weeklyBudgetFor } from './profileStore.ts'
 import { footprintFor } from './footprint.ts'
 import { moodFor } from './pet.ts'
-import { cloudFor, fetchSoon, pushChange, reportSyncError } from './cloud.ts'
+import { cloudFor, fetchSoon, reportSyncError } from './cloud.ts'
 import foodBowl from './assets/shop/food-bowl.png'
 import catTreats from './assets/shop/cat-treats.png'
 
@@ -48,6 +49,7 @@ export type ShopState = {
 
 const EMPTY: ShopState = { spent: 0, owned: { treats: 0, bowl: 0 }, fedUntil: 0, reviveUntil: 0 }
 
+const sync = createAccountSync('shop_state')
 let userId: string | null = null
 let storageKey: string | null = null
 
@@ -76,6 +78,7 @@ export function setShopUser(nextUserId: string | null) {
   const nextKey = nextUserId ? `shop:${nextUserId}` : null
   if (storageKey === nextKey) return
   userId = nextUserId
+  sync.setUser(nextUserId)
   storageKey = nextKey
   state = load()
   listeners.forEach((l) => l())
@@ -94,10 +97,13 @@ async function pull() {
   const cloud = cloudFor(userId)
   if (!cloud) return
   const key = storageKey
+  const owner = userId
+  const revision = sync.revision
   try {
-    const { data, error } = await cloud.from('shop_state').select('spent, owned, fed_until, revive_until').maybeSingle()
+    if (!await sync.flush() || storageKey !== key) return
+    const { data, error } = await cloud.from('shop_state').select('spent, owned, fed_until, revive_until').eq('user_id', owner!).maybeSingle()
     if (error) throw error
-    if (storageKey !== key) return
+    if (storageKey !== key || sync.revision !== revision || sync.pending) return
     if (!data) {
       if (state !== EMPTY) push(state)
       return
@@ -115,15 +121,13 @@ async function pull() {
 }
 
 function push(next: ShopState) {
-  pushChange(userId, (cloud) =>
-    cloud.from('shop_state').upsert({
+  sync.enqueue({ type: 'upsert', row: {
       spent: next.spent,
       owned: next.owned,
       fed_until: next.fedUntil,
       revive_until: next.reviveUntil,
       updated_at: new Date().toISOString(),
-    }),
-  )
+    } })
 }
 
 function save(next: ShopState, sync = true) {
