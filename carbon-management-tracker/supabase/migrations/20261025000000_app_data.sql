@@ -1,5 +1,4 @@
--- App data for Future Earth. Run this once in the Supabase SQL editor (or with
--- `supabase db push`). Every table is locked to its owner with row level
+-- App data for Future Earth. Every table is locked to its owner with row level
 -- security; friends only ever see each other's totals, through functions below.
 
 -- --------------------------------------------------------------------------
@@ -64,6 +63,8 @@ create table if not exists public.shop_state (
   owned jsonb not null default '{}'::jsonb,
   -- When the last meal stops cheering the cat up, in ms since 1970
   fed_until bigint not null default 0,
+  -- Food revives a collapsed cat once: when that meal wears off, 0 while unused
+  revive_until bigint not null default 0,
   updated_at timestamptz not null default now()
 );
 

@@ -216,11 +216,15 @@ export function useProfile() {
 
 // The cat works weekly and the year chart works yearly, so both are derived
 // from the monthly limit the user sets
+export function weeklyBudgetFor(monthlyLimitKg: number) {
+  return Math.round((monthlyLimitKg * 12) / 52)
+}
+
 export function useLimits() {
   const { monthlyLimitKg } = useProfile()
   return {
     monthlyLimitKg,
-    weeklyBudgetKg: Math.round((monthlyLimitKg * 12) / 52),
+    weeklyBudgetKg: weeklyBudgetFor(monthlyLimitKg),
     limitTonnes: Math.round(monthlyLimitKg * 12) / 1000,
   }
 }

@@ -1,5 +1,3 @@
-#database
-#pip install supabase
 # The backend uses the same public (anon/publishable) key as the browser and
 # acts as the signed-in user, so row level security still decides what it sees.
 

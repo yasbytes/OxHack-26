@@ -74,7 +74,7 @@ function loadDemoSession() {
   return user ? demoSession(user) : null
 }
 
-// Same pattern as the course: one provider owns the session and all auth actions.
+// One provider owns the session and all auth actions.
 export function AuthContextProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null | undefined>(() => {
     if (supabase) return undefined
@@ -210,7 +210,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// The tutorial keeps the provider and its consumer hook together.
+// The provider and its consumer hook live together.
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)

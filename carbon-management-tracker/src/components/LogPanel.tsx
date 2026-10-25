@@ -124,7 +124,6 @@ function LogPanel() {
       date,
       description,
     }
-    // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
     const modeLabel = MODES.find((m) => m.id === mode)?.label ?? mode
     const places = found ? `${found.from} → ${found.to}` : origin || destination ? `${origin || '?'} → ${destination || '?'}` : ''

@@ -1,6 +1,5 @@
 # Carbon net worth = carbon emissions - eco savings
 # Lower is better. Negative means you saved more CO2 than you emitted.
-#wire it to ur database later 
 
 from datetime import date, datetime
 import calendar

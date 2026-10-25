@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // The FastAPI backend (npm run api, or uvicorn in backend/)
+  // Forwards API calls to the FastAPI backend
   server: {
     proxy: { '/api': 'http://localhost:8000' },
   },

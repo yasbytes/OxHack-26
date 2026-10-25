@@ -13,8 +13,10 @@ type Props = {
 
 function PetCard({ weekKg, budgetKg }: Props) {
   const { coins, owned } = useShop()
-  const { fed, hoursLeft } = useFed()
-  const mood = fedMood(moodFor(weekKg, budgetKg), fed)
+  const { fed, hoursLeft, reviving, reviveUsed } = useFed()
+  const collapsed = moodFor(weekKg, budgetKg).id === 'sick'
+  const mood = fedMood(moodFor(weekKg, budgetKg), fed, reviving)
+  const hours = `${hoursLeft} more ${hoursLeft === 1 ? 'hour' : 'hours'}`
   const food = SHOP_ITEMS.filter((item) => owned[item.id] > 0)
   const { petName: name } = useProfile()
   const [editing, setEditing] = useState(false)
@@ -87,12 +89,19 @@ function PetCard({ weekKg, budgetKg }: Props) {
         <p className="pet__week">
           {Math.round(weekKg)} / {budgetKg} kg CO₂e this week
         </p>
-        {fed && (
+        {collapsed ? (
           <p className="pet__fed">
-            Well fed · happier for {hoursLeft} more {hoursLeft === 1 ? 'hour' : 'hours'}
+            {reviving
+              ? `Revived for ${hours}. Food won't work a second time.`
+              : reviveUsed
+                ? "Food can't revive them again. Cut this week's footprint to bring them round."
+                : 'Feed them to revive them. It only works once.'}
           </p>
+        ) : (
+          fed && <p className="pet__fed">Well fed · happier for {hours}</p>
         )}
-        {food.length > 0 && (
+        {/* Once the revive is used, more food would only be wasted on a collapsed cat */}
+        {!(collapsed && reviveUsed) && food.length > 0 && (
           <div className="pet__feed">
             {food.map((item) => (
               <button

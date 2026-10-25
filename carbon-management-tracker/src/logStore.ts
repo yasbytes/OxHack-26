@@ -15,7 +15,7 @@ export type LogItem = {
   loggedAt: number
   title: string
   detail: string
-  // Front-end estimate for now; null when it can't be worked out (free text)
+  // kg CO₂e; null when it can't be worked out (free text)
   kg: number | null
   // Bills cover a stretch of days ending on `date`; everything else is 1 day
   spreadDays?: number

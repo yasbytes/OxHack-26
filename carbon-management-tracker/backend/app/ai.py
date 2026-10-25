@@ -1,15 +1,14 @@
 import os
 from pathlib import Path
 from typing import Literal
-from dotenv import load_dotenv #reads your env file.
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
 
-# .env is in backend it's just hidden rn
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-# Google retires older models for new keys, so this can be changed in .env
+# Google retires older models for new keys, so GEMINI_MODEL can override this
 MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 _client: genai.Client | None = None
@@ -67,7 +66,3 @@ def parse_activities(text: str) -> list[dict]:
     parsed = response.parsed or []
     return [a.model_dump() for a in parsed]
 
-
-#to use this ex.
-#from app.ai import ask_gemini
-#answer = ask_gemini("How can I reduce my carbon footprint?")
