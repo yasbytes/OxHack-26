@@ -1,13 +1,9 @@
 import { useMemo } from 'react'
 import { useLog } from '../logStore.ts'
 import { useLimits } from '../profileStore.ts'
-<<<<<<< HEAD
-import { useFootprint } from '../footprint.ts'
-import { buildYear } from '../monthly.ts'
-=======
 import { useFootprint, type CategoryId } from '../footprint.ts'
 import { localDate } from '../dates.ts'
->>>>>>> origin/main
+import { buildYear } from '../monthly.ts'
 import ProjectionChart from '../components/ProjectionChart.tsx'
 
 type CategoryKg = { id: CategoryId; label: string; kg: number }[]
@@ -22,13 +18,9 @@ const TIPS: Record<CategoryId, string> = {
 
 // As YYYY-MM-DD in local time, to compare with log entry dates
 function daysAgo(days: number) {
-<<<<<<< HEAD
-  return new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10)
-=======
   const date = new Date()
   date.setDate(date.getDate() - days)
   return localDate(date)
->>>>>>> origin/main
 }
 
 function Breakdown({ categoryKg }: { categoryKg: CategoryKg }) {
@@ -84,22 +76,15 @@ function InsightsPage() {
   const weekAgo = daysAgo(7)
   const loggedThisWeek = log.filter((i) => i.date > weekAgo).length
 
-<<<<<<< HEAD
   const { weekKg, categoryKg } = useFootprint()
   const { limitTonnes, weeklyBudgetKg } = useLimits()
   const week = Math.round(weekKg)
 
-  // Real monthly totals and forecast, built from logged entries only
+  // Monthly totals and forecast for the chart; the cards use the same numbers
   const year = useMemo(() => buildYear(log), [log])
   const yearTonnes = year.soFarKg / 1000
   const projected = year.projectedKg / 1000
 
-=======
-  const { yearTonnes, projectedTonnes: projected, paceKgPerDay, weekKg, weeklyKg, categoryKg } =
-    useFootprint()
-  const { limitTonnes, weeklyBudgetKg } = useLimits()
-  const week = Math.round(weekKg)
->>>>>>> origin/main
   const projectedOver = projected > limitTonnes
   const weekOver = week > weeklyBudgetKg
   const biggest = categoryKg.reduce((a, b) => (b.kg > a.kg ? b : a))
@@ -123,7 +108,7 @@ function InsightsPage() {
         </section>
         <section className="card stat">
           <h2 className="stat__label">Year so far</h2>
-          <p className="stat__value">{yearTonnes.toFixed(1)} t</p>
+          <p className="stat__value">{yearTonnes.toFixed(2)} t</p>
           <p className="stat__sub">of {limitTonnes} t (your monthly limit × 12)</p>
         </section>
         <section className={`card stat${projectedOver ? ' stat--warn' : ''}`}>
@@ -145,16 +130,7 @@ function InsightsPage() {
       <section className="card chart-card">
         <h2 className="card__title">Year projection</h2>
         <p className="chart-card__sub">Running total of t CO₂e this year, and where you're heading</p>
-<<<<<<< HEAD
         <ProjectionChart data={year} limitTonnes={limitTonnes} />
-=======
-        <ProjectionChart
-          yearTonnes={yearTonnes}
-          weeklyKg={weeklyKg}
-          limitTonnes={limitTonnes}
-          paceKgPerDay={paceKgPerDay}
-        />
->>>>>>> origin/main
       </section>
 
       <div className="insights__row">
