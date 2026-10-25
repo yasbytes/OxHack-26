@@ -91,7 +91,7 @@ Emission numbers come from fixed factors in the backend, not from Gemini.
 ## Troubleshooting
 
 | Problem | Fix |
-
+|---|---|
 | If `uvicorn` is not recognized | The environment isn't active. Look for `(OxHack)` in the prompt and run the activate command again. |
 | PowerShell blocks the activate script | Run `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` once. |
 | `GEMINI_API_KEY not found` | Add it to `backend/.env` and restart the backend. |
