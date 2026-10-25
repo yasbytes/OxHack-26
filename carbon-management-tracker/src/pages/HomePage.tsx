@@ -18,10 +18,10 @@ function HomePage() {
   const user = session?.user
   const accountName = typeof user?.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
     ? user.user_metadata.full_name.trim() : user?.email?.split('@')[0] || 'there'
-  const { yearTonnes, monthKg, weekKg } = useFootprint()
+  const { yearTonnes, monthKg } = useFootprint()
   const { name: profileName } = useProfile()
   const name = profileName || accountName
-  const { monthlyLimitKg, weeklyBudgetKg } = useLimits()
+  const { monthlyLimitKg } = useLimits()
   const month = Math.round(monthKg)
   const overLimit = month > monthlyLimitKg
 
@@ -62,7 +62,7 @@ function HomePage() {
             </p>
           </div>
         </section>
-        <PetCard weekKg={weekKg} budgetKg={weeklyBudgetKg} />
+        <PetCard monthKg={monthKg} limitKg={monthlyLimitKg} />
       </div>
 
       <AskAI />

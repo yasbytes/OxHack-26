@@ -22,7 +22,7 @@ class FakeAudio {
   constructor(src: string) { this.src = src; clips.push(this) }
   addEventListener(event: string, handler: () => void) { this.handlers[event] = handler }
 }
-const card = () => <MemoryRouter><PetCard weekKg={1} budgetKg={50} /></MemoryRouter>
+const card = () => <MemoryRouter><PetCard monthKg={1} limitKg={50} /></MemoryRouter>
 const entry = (id: string, title: string): LogItem => ({ id, title, kind: 'food', detail: '', date: '2026-10-25', loggedAt: 1, kg: 1 })
 
 beforeEach(() => { log.current = null; clips.length = 0; vi.stubGlobal('Audio', FakeAudio) })

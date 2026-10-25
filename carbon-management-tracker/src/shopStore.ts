@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { showToast } from './toast.ts'
 import { coinsEarned, START_COINS } from './coins.ts'
 import { getLogItems, useLog } from './logStore.ts'
-import { getProfile, useProfile, weeklyBudgetFor } from './profileStore.ts'
+import { getProfile, useProfile } from './profileStore.ts'
 import { footprintFor } from './footprint.ts'
 import { moodFor } from './pet.ts'
 import { cloudFor, fetchSoon, reportSyncError } from './cloud.ts'
@@ -153,16 +153,16 @@ export function buyItem(item: ShopItem) {
   showToast(`Bought ${item.name.toLowerCase()} · −${item.price} coins`)
 }
 
-// The cat's mood from this week's log alone, before any food
-function weekMood(log = getLogItems(), monthlyLimitKg = getProfile().monthlyLimitKg) {
-  return moodFor(footprintFor(log).weekKg, weeklyBudgetFor(monthlyLimitKg))
+// The cat's mood from this month's log alone, before any food
+function monthMood(log = getLogItems(), monthlyLimitKg = getProfile().monthlyLimitKg) {
+  return moodFor(footprintFor(log).monthKg, monthlyLimitKg)
 }
 
 export function feedItem(item: ShopItem, petName: string) {
   if (state.owned[item.id] < 1) return
   const name = petName || 'Your cat'
   const now = Date.now()
-  const collapsed = weekMood().id === 'sick'
+  const collapsed = monthMood().id === 'sick'
   // Feeding again tops the time up rather than stacking a second mood level
   const fedUntil = Math.max(state.fedUntil, now) + item.boostHours * HOUR_MS
   save({

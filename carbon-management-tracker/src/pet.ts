@@ -8,8 +8,9 @@ import okayVoice from './assets/pet/voice/okay.mp3'
 import worriedVoice from './assets/pet/voice/worried.mp3'
 import miserableVoice from './assets/pet/voice/miserable.mp3'
 
-// Mood comes from the last 7 days against a weekly budget, so a good few days
-// let the pet recover. The thresholds are fractions of the budget. `says` is
+// Mood comes from this month's footprint against the monthly limit, the same
+// numbers as the footprint bar on Home. The thresholds are fractions of the limit
+// (the Friends leaderboard uses them on weekly numbers instead). `says` is
 // what the cat speaks when clicked, and `voice` the recording of it (made by
 // backend/app/voice.py); a collapsed cat has nothing to say.
 export const MOODS = [
@@ -21,8 +22,8 @@ export const MOODS = [
 ] as const
 export type Mood = (typeof MOODS)[number]
 
-export function moodFor(weekKg: number, budgetKg: number): Mood {
-  const ratio = weekKg / budgetKg
+export function moodFor(usedKg: number, limitKg: number): Mood {
+  const ratio = usedKg / limitKg
   return MOODS.find((m) => ratio < m.max) ?? MOODS[MOODS.length - 1]
 }
 

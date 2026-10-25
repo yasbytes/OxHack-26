@@ -4,20 +4,20 @@ import { fedMood, moodFor, type Mood } from '../pet.ts'
 import { updateProfile, useProfile } from '../profileStore.ts'
 import { feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
 import { useLastAdded } from '../logStore.ts'
-import { reactionFor } from '../petReactions.ts'
+import { reactionFor, type PetSpeech } from '../petReactions.ts'
 
 const MAX_NAME_LENGTH = 20
 
 type Props = {
-  weekKg: number
-  budgetKg: number
+  monthKg: number
+  limitKg: number
 }
 
-function PetCard({ weekKg, budgetKg }: Props) {
+function PetCard({ monthKg, limitKg }: Props) {
   const { coins, owned } = useShop()
   const { fed, hoursLeft } = useFed()
-  const collapsed = moodFor(weekKg, budgetKg).id === 'sick'
-  const mood = fedMood(moodFor(weekKg, budgetKg), fed)
+  const collapsed = moodFor(monthKg, limitKg).id === 'sick'
+  const mood = fedMood(moodFor(monthKg, limitKg), fed)
   const hours = `${hoursLeft} more ${hoursLeft === 1 ? 'hour' : 'hours'}`
   const food = SHOP_ITEMS.filter((item) => owned[item.id] > 0)
   const { petName: name } = useProfile()
@@ -31,7 +31,8 @@ function PetCard({ weekKg, budgetKg }: Props) {
   const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const speechVersion = useRef(0)
   const lastAdded = useLastAdded()
-  const line = lastAdded ? reactionFor(lastAdded) : { says: mood.says, voice: mood.voice }
+  // Clicking the cat always gives its mood, which follows this week's footprint
+  const moodLine = { says: mood.says, voice: mood.voice }
 
   // Stop talking when the card goes away
   useEffect(() => () => {
@@ -40,8 +41,9 @@ function PetCard({ weekKg, budgetKg }: Props) {
     if (speechTimer.current) clearTimeout(speechTimer.current)
   }, [])
 
-  function speak() {
-    if (!line.says) return
+  function speak(line: { says: PetSpeech['says'] | null; voice: PetSpeech['voice'] }) {
+    // A collapsed cat has nothing to say, whatever was logged
+    if (!line.says || !mood.says) return
     voice.current?.pause()
     if (speechTimer.current) clearTimeout(speechTimer.current)
     const version = ++speechVersion.current
@@ -64,11 +66,12 @@ function PetCard({ weekKg, budgetKg }: Props) {
     audio.play().catch(keepText)
   }
 
-  // Each new log gets a reaction to that activity, independently of the weekly mood.
-  // Whatever was logged before this card appeared has already been heard.
+  // Each new log gets a reaction to that activity; clicking the cat afterwards
+  // goes back to its mood. Whatever was logged before this card appeared has
+  // already been heard.
   const lastAddedId = lastAdded?.id ?? null
   const heardId = useRef(lastAddedId)
-  const speakAboutLog = useEffectEvent(speak)
+  const speakAboutLog = useEffectEvent(() => { if (lastAdded) speak(reactionFor(lastAdded)) })
   useEffect(() => {
     if (!lastAddedId || lastAddedId === heardId.current) return
     heardId.current = lastAddedId
@@ -98,12 +101,12 @@ function PetCard({ weekKg, budgetKg }: Props) {
           {speech}
         </p>
       )}
-      {line.says ? (
+      {moodLine.says ? (
         <button
           type="button"
           className={`pet__art pet__art--${mood.id} pet__art--talks`}
           aria-label={`Hear ${shownName}`}
-          onClick={speak}
+          onClick={() => speak(moodLine)}
         >
           <PetArt mood={mood} />
         </button>
@@ -149,7 +152,7 @@ function PetCard({ weekKg, budgetKg }: Props) {
           {shownName} {mood.message}
         </p>
         <p className="pet__week">
-          {Math.round(weekKg)} / {budgetKg} kg CO₂e this week
+          {Math.round(monthKg)} / {limitKg} kg CO₂e this month
         </p>
         {collapsed ? (
           <p className="pet__fed">

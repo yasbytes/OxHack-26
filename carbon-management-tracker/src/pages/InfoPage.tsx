@@ -8,7 +8,7 @@ import { useLimits } from '../profileStore.ts'
 function moodRange(index: number) {
   const percent = (fraction: number) => `${Math.round(fraction * 100)}%`
   const mood = MOODS[index]
-  if (index === 0) return `under ${percent(mood.max)} of your weekly budget`
+  if (index === 0) return `under ${percent(mood.max)} of your monthly limit`
   const from = percent(MOODS[index - 1].max)
   return mood.max === Infinity ? `over ${from}` : `${from} to ${percent(mood.max)}`
 }
@@ -66,8 +66,8 @@ function InfoPage() {
         <section className="card info__card">
           <h2 className="card__title">Your cat</h2>
           <p className="info__text">
-            Its mood depends on your last 7 days compared with your weekly budget, so a few good days
-            help it recover. Click it to hear what it thinks. It also speaks up whenever you log
+            Its mood follows this month's footprint against your monthly limit, the same as the
+            bar on Home, and it starts afresh each month. Click it to hear what it thinks. It also speaks up whenever you log
             something.
           </p>
           <ul className="info__moods">
