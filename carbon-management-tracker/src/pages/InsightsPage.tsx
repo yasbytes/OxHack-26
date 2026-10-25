@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useLog } from '../logStore.ts'
 import { CATEGORY_KG } from '../sampleData.ts'
 import { useLimits } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
+import { buildYear } from '../monthly.ts'
 import ProjectionChart from '../components/ProjectionChart.tsx'
 
 type CategoryKg = { id: (typeof CATEGORY_KG)[number]['id']; label: string; kg: number }[]
@@ -19,15 +21,6 @@ const DAY_MS = 86_400_000
 // As YYYY-MM-DD, to compare with log entry dates
 function daysAgo(days: number) {
   return new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10)
-}
-
-// Straight-line estimate: this year's total so far, scaled to a full year
-function projectYear(yearTonnes: number) {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), 0, 1)
-  const end = new Date(now.getFullYear() + 1, 0, 1)
-  const elapsed = (now.getTime() - start.getTime()) / (end.getTime() - start.getTime())
-  return yearTonnes / elapsed
 }
 
 function Breakdown({ categoryKg }: { categoryKg: CategoryKg }) {
@@ -79,10 +72,15 @@ function InsightsPage() {
   const weekAgo = daysAgo(7)
   const loggedThisWeek = log.filter((i) => i.date > weekAgo).length
 
-  const { yearTonnes, weekKg, weeklyKg, categoryKg } = useFootprint()
+  const { weekKg, categoryKg } = useFootprint()
   const { limitTonnes, weeklyBudgetKg } = useLimits()
   const week = Math.round(weekKg)
-  const projected = projectYear(yearTonnes)
+
+  // Real monthly totals and forecast, built from logged entries only
+  const year = useMemo(() => buildYear(log), [log])
+  const yearTonnes = year.soFarKg / 1000
+  const projected = year.projectedKg / 1000
+
   const projectedOver = projected > limitTonnes
   const weekOver = week > weeklyBudgetKg
   const biggest = categoryKg.reduce((a, b) => (b.kg > a.kg ? b : a))
@@ -127,7 +125,7 @@ function InsightsPage() {
       <section className="card chart-card">
         <h2 className="card__title">Year projection</h2>
         <p className="chart-card__sub">Running total of t CO₂e this year, and where you're heading</p>
-        <ProjectionChart yearTonnes={yearTonnes} weeklyKg={weeklyKg} limitTonnes={limitTonnes} />
+        <ProjectionChart data={year} limitTonnes={limitTonnes} />
       </section>
 
       <div className="insights__row">

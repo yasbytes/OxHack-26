@@ -1,5 +1,5 @@
 import { useLog, type LogItem } from './logStore.ts'
-import { CATEGORY_KG, WEEKLY_KG, YEAR_TONNES } from './sampleData.ts'
+import { CATEGORY_KG, WEEKLY_KG } from './sampleData.ts'
 
 const DAY_MS = 86_400_000
 
@@ -17,22 +17,22 @@ function dailyShares(item: LogItem, today: Date): [number, number][] {
   return Array.from({ length: days }, (_, i) => [end + i, item.kg! / days])
 }
 
-// Sample numbers plus everything logged, so logging moves every figure
+function dayOfYear(today: Date) {
+  return Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 1).getTime()) / DAY_MS)
+}
+
+// Everything here comes from what the user has logged. Nothing is pre-filled.
 export function useFootprint() {
   const log = useLog()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const weeklyKg = [...WEEKLY_KG]
-  // Month so far: the sample weeks spread evenly over their days, plus logs
+  // Last 8 weeks, oldest first; the final week is this week
+  const weeklyKg = WEEKLY_KG.map(() => 0)
+  const categoryKg = CATEGORY_KG.map((c) => ({ ...c, kg: 0 as number }))
   const dayOfMonth = today.getDate()
   let monthKg = 0
-  for (let ago = 0; ago < dayOfMonth; ago++) {
-    const week = Math.floor(ago / 7)
-    if (week < WEEKLY_KG.length) monthKg += WEEKLY_KG[WEEKLY_KG.length - 1 - week] / 7
-  }
-  const categoryKg = CATEGORY_KG.map((c) => ({ ...c, kg: c.kg as number }))
-  let yearKg = YEAR_TONNES * 1000
+  let yearKg = 0
 
   for (const item of log) {
     const category = categoryKg.find((c) => c.id === item.kind)
@@ -53,8 +53,4 @@ export function useFootprint() {
     weeklyKg: weeklyKg.map((kg) => Math.round(kg)),
     categoryKg: categoryKg.map((c) => ({ ...c, kg: Math.round(c.kg) })),
   }
-}
-
-function dayOfYear(today: Date) {
-  return Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 1).getTime()) / DAY_MS)
 }
