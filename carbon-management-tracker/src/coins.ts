@@ -43,7 +43,8 @@ export function coinsEarned(log: LogItem[], monthlyLimitKg: number, now = new Da
       kgByDay.set(key, (kgByDay.get(key) ?? 0) + kg)
     }
   }
-  const loggedDays = new Set(log.map((item) => item.date).filter((date) => date < todayKey))
+  // Unknown estimates are not zero emissions and cannot earn under-budget rewards.
+  const loggedDays = new Set(log.filter((item) => item.kg !== null).map((item) => item.date).filter((date) => date < todayKey))
 
   let coins = 0
   for (const day of loggedDays) {

@@ -1,6 +1,7 @@
+import { createAccountSync } from './accountSync'
 import { useSyncExternalStore } from 'react'
 import { showToast } from './toast.ts'
-import { cloudFor, fetchSoon, pushChange, reportSyncError, type Cloud } from './cloud.ts'
+import { cloudFor, fetchSoon, reportSyncError } from './cloud.ts'
 
 // Entries are cached in this browser per account, and real accounts keep them
 // in the log_items table too, so they follow the user to other devices
@@ -58,6 +59,7 @@ function fromRow(row: LogRow): LogItem {
   }
 }
 
+const sync = createAccountSync('log_items')
 let userId: string | null = null
 let storageKey: string | null = null
 
@@ -84,8 +86,10 @@ export function setLogUser(nextUserId: string | null) {
   const nextKey = nextUserId ? `carbon-log:${nextUserId}` : null
   if (storageKey === nextKey) return
   userId = nextUserId
+  sync.setUser(nextUserId)
   storageKey = nextKey
   items = load()
+  lastAddedId = null
   listeners.forEach((listener) => listener())
   fetchSoon(pull)
 }
@@ -96,21 +100,33 @@ async function pull() {
   const cloud = cloudFor(userId)
   if (!cloud) return
   const key = storageKey
-  const startedAt = Date.now()
+  const owner = userId
+  const revision = sync.revision
   try {
-    const { data, error } = await cloud.from('log_items').select('*').order('logged_at', { ascending: false })
-    if (error) throw error
-    if (storageKey !== key) return
-    const remote = (data as LogRow[]).map(fromRow)
-    if (remote.length === 0 && items.length > 0) {
-      const { error: uploadError } = await cloud.from('log_items').upsert(items.map(toRow))
-      if (uploadError) throw uploadError
-      return
+    if (!await sync.flush() || storageKey !== key) return
+    // Supabase limits each response. Read every page so older activity still
+    // contributes to the graph and rewards after a long logging history.
+    const rows: LogRow[] = []
+    const pageSize = 500
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await cloud.from('log_items').select('*')
+        .eq('user_id', owner!).order('logged_at', { ascending: false }).order('id')
+        .range(offset, offset + pageSize - 1)
+      if (error) throw error
+      if (storageKey !== key || sync.revision !== revision) return
+      rows.push(...(data as LogRow[]))
+      if (data.length < pageSize) break
     }
-    // Keep anything logged while the request was on its way
-    const remoteIds = new Set(remote.map((i) => i.id))
-    const fresh = items.filter((i) => i.loggedAt >= startedAt && !remoteIds.has(i.id))
-    save([...fresh, ...remote])
+    if (storageKey !== key || sync.revision !== revision || sync.pending) return
+    const remote = rows.map(fromRow)
+    let firstSync = true
+    try { firstSync = localStorage.getItem(`synced:${key}`) !== 'yes' } catch { /* optional marker */ }
+    if (firstSync && remote.length === 0 && items.length > 0) {
+      for (const item of items) sync.enqueue({ type: 'upsert', row: toRow(item) })
+    } else {
+      save(remote)
+    }
+    try { localStorage.setItem(`synced:${key}`, 'yes') } catch { /* optional marker */ }
   } catch (error) {
     reportSyncError(error)
   }
@@ -127,16 +143,12 @@ function save(next: LogItem[]) {
   listeners.forEach((l) => l())
 }
 
-function push(change: (cloud: Cloud) => PromiseLike<{ error: unknown }>) {
-  pushChange(userId, change)
-}
-
 export function addLogItem(item: Omit<LogItem, 'id' | 'loggedAt'>) {
   const id = crypto.randomUUID()
   lastAddedId = id
   const added = { ...item, id, loggedAt: Date.now() }
   save([added, ...items])
-  push((cloud) => cloud.from('log_items').insert(toRow(added)))
+  sync.enqueue({ type: 'upsert', row: toRow(added) })
   showToast(
     item.kg === null ? 'Saved to History' : `Saved · ${item.kg.toFixed(1)} kg CO₂e`,
   )
@@ -145,20 +157,20 @@ export function addLogItem(item: Omit<LogItem, 'id' | 'loggedAt'>) {
 export function updateLogItem(id: string, changes: Pick<LogItem, 'date' | 'title' | 'detail'>) {
   // Only the wording and date can change, so the estimate still applies
   save(items.map((i) => (i.id === id ? { ...i, ...changes } : i)))
-  push((cloud) => cloud.from('log_items').update(changes).eq('id', id))
+  const updated = items.find((item) => item.id === id)
+  if (updated) sync.enqueue({ type: 'upsert', row: toRow(updated) })
   showToast('Changes saved')
 }
 
 export function clearLog() {
   lastAddedId = null
-  const owner = userId
   save([])
-  push((cloud) => cloud.from('log_items').delete().eq('user_id', owner!))
+  sync.enqueue({ type: 'delete' })
 }
 
 export function deleteLogItem(id: string) {
   save(items.filter((i) => i.id !== id))
-  push((cloud) => cloud.from('log_items').delete().eq('id', id))
+  sync.enqueue({ type: 'delete', id })
   showToast('Entry deleted')
 }
 

@@ -108,6 +108,7 @@ describe('coins', () => {
   it("doesn't pay for today yet, or for days with nothing logged", () => {
     expect(coinsEarned([entry(day(now, 0), 0)], limit, now)).toBe(0)
     expect(coinsEarned([], limit, now)).toBe(0)
+    expect(coinsEarned([entry(day(now, -1), null)], limit, now)).toBe(0)
   })
 
   it("can't be farmed by logging the same day over and over", () => {

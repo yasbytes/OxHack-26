@@ -1,5 +1,6 @@
 -- App data for Future Earth. Every table is locked to its owner with row level
 -- security; friends only ever see each other's totals, through functions below.
+begin;
 
 -- --------------------------------------------------------------------------
 -- Profile: one row per account
@@ -39,7 +40,7 @@ create table if not exists public.log_items (
   title text not null check (char_length(title) <= 500),
   detail text not null default '' check (char_length(detail) <= 1000),
   -- Null when there's no estimate (free text nobody could read)
-  kg double precision check (kg is null or kg >= 0),
+  kg double precision check (kg is null or (kg >= 0 and kg < 'Infinity'::double precision)),
   -- Bills cover a stretch of days ending on `date`
   spread_days int check (spread_days is null or spread_days between 1 and 366)
 );
@@ -89,6 +90,8 @@ create table if not exists public.friendships (
 );
 
 create index if not exists friendships_addressee on public.friendships (addressee);
+create unique index if not exists friendships_pair on public.friendships
+  (least(requester, addressee), greatest(requester, addressee));
 
 alter table public.friendships enable row level security;
 
@@ -191,6 +194,10 @@ begin
   if them is null then raise exception 'no_account'; end if;
   if them = me then raise exception 'is_you'; end if;
 
+  -- Simultaneous requests in opposite directions must create just one friendship.
+  perform pg_advisory_xact_lock(hashtextextended(
+    least(me, them)::text || greatest(me, them)::text, 0));
+
   select * into existing from public.friendships
   where (requester = me and addressee = them) or (requester = them and addressee = me);
 
@@ -240,3 +247,11 @@ grant execute on function public.friends_overview() to authenticated;
 grant execute on function public.send_friend_request(text) to authenticated;
 grant execute on function public.respond_friend_request(uuid, boolean) to authenticated;
 grant execute on function public.remove_friend(uuid) to authenticated;
+
+-- Explicit grants also work on projects without Supabase's default table grants.
+revoke all on public.profiles, public.log_items, public.shop_state, public.friendships from anon, authenticated;
+grant select, insert, update, delete on public.profiles, public.log_items, public.shop_state to authenticated;
+revoke insert, update, delete, truncate, references, trigger on public.friendships from authenticated;
+grant select on public.friendships to authenticated;
+notify pgrst, 'reload schema';
+commit;
