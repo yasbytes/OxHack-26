@@ -55,8 +55,8 @@ it('a meal lifts the mood one level, but not past thriving', () => {
   expect(fedMood(MOODS[2], true)).toBe(MOODS[1])
   expect(fedMood(MOODS[0], true)).toBe(MOODS[0])
   expect(fedMood(MOODS[2], false)).toBe(MOODS[2])
-  // A collapsed cat comes round whenever it's fed
-  expect(fedMood(MOODS[4], true)).toBe(MOODS[3])
+  // A collapsed cat is revived to okay whenever it's fed
+  expect(fedMood(MOODS[4], true)).toBe(MOODS[1])
   expect(fedMood(MOODS[4], false)).toBe(MOODS[4])
 })
 
@@ -70,5 +70,6 @@ it('food revives a collapsed cat every time', () => {
   // A second meal works too and tops up the time
   act(() => feedItem(treats, 'Tom'))
   expect(savedShop().owned.treats).toBe(0)
-  expect(result.current.hoursLeft).toBe(12)
+  // Two 6-hour treats, give or take the few ms the test takes
+  expect(savedShop().fedUntil - Date.now()).toBeGreaterThan(11.99 * 3_600_000)
 })

@@ -26,5 +26,3 @@ dist-ssr
 *.sln
 *.sw?
 
-# Generated cat voice lines (backend/app/voice.py)
-backend/voice_cache/

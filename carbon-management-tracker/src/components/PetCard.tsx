@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { fedMood, moodFor, type Mood } from '../pet.ts'
 import { updateProfile, useProfile } from '../profileStore.ts'
 import { feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
+import { useLastAdded } from '../logStore.ts'
 
 const MAX_NAME_LENGTH = 20
-// Empty string means "same origin", so the Vite proxy forwards /api to the backend
-const API = import.meta.env.VITE_API_URL ?? ''
 
 type Props = {
   weekKg: number
@@ -33,17 +32,27 @@ function PetCard({ weekKg, budgetKg }: Props) {
   useEffect(() => () => voice.current?.pause(), [])
 
   function speak() {
-    if (!mood.says) return
+    if (!mood.says || !mood.voice) return
     voice.current?.pause()
-    // The backend voices each line with ElevenLabs once, then serves it from its cache
-    const audio = new Audio(`${API}/api/cat-voice/${mood.id}`)
+    const audio = new Audio(mood.voice)
     voice.current = audio
     setSpeech(mood.says)
     const done = () => { if (voice.current === audio) setSpeech(null) }
     audio.addEventListener('ended', done)
-    // Without the backend the bubble still shows the line for a moment
+    // If the sound can't play, the bubble still shows the line for a moment
     audio.play().catch(() => setTimeout(done, 2500))
   }
+
+  // Each new log entry gets a word from the cat, in the mood that entry leaves it in.
+  // Whatever was logged before this card appeared has already been heard.
+  const lastAddedId = useLastAdded()?.id ?? null
+  const heardId = useRef(lastAddedId)
+  const speakAboutLog = useEffectEvent(speak)
+  useEffect(() => {
+    if (!lastAddedId || lastAddedId === heardId.current) return
+    heardId.current = lastAddedId
+    speakAboutLog()
+  }, [lastAddedId])
 
   function startEditing() {
     setDraft(name)

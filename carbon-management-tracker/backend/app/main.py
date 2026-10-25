@@ -1,13 +1,11 @@
 import os
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.db import User, current_user
 from app.projections import monthly_net_worth, compare_years
 from app.ai import ask_gemini
 from app.journey import plan_journey
-from app.voice import CAT_LINES, cat_voice
 
 app = FastAPI()
 
@@ -57,12 +55,3 @@ def journey(body: JourneyBody):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Couldn't plan that journey: {e}")
 
-
-@app.get("/api/cat-voice/{mood}")
-def cat_voice_line(mood: str):
-    if mood not in CAT_LINES:
-        raise HTTPException(status_code=404, detail="No line for that mood")
-    try:
-        return FileResponse(cat_voice(mood), media_type="audio/mpeg")
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Couldn't make the cat's voice: {e}")
