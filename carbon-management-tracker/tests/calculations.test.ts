@@ -108,6 +108,7 @@ describe('coins', () => {
   it("doesn't pay for today yet, or for days with nothing logged", () => {
     expect(coinsEarned([entry(day(now, 0), 0)], limit, now)).toBe(0)
     expect(coinsEarned([], limit, now)).toBe(0)
+    expect(coinsEarned([entry(day(now, -1), null)], limit, now)).toBe(0)
   })
 
   it("can't be farmed by logging the same day over and over", () => {
@@ -138,7 +139,8 @@ describe('monthly limit', () => {
   it('pulls limits saved under the old 830 kg average down to 20% below the real one', async () => {
     localStorage.setItem('profile', JSON.stringify({ monthlyLimitKg: 830 }))
     vi.resetModules()
-    const { getProfile, MAX_MONTHLY_LIMIT_KG } = await import('../src/profileStore')
+    const { getProfile, setProfileUser, MAX_MONTHLY_LIMIT_KG } = await import('../src/profileStore')
+    setProfileUser('alice')
     expect(MAX_MONTHLY_LIMIT_KG).toBe(365)
     expect(getProfile().monthlyLimitKg).toBe(365)
   })

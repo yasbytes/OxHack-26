@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import carIcon from '../assets/icons/car.svg'
 import busIcon from '../assets/icons/bus.svg'
 import trainIcon from '../assets/icons/train.svg'
@@ -51,7 +51,7 @@ function LogPanel() {
   const [tab, setTab] = useState<Tab>('Travel & Transport')
   const [mode, setMode] = useState<Mode>('car')
   const [fuelType, setFuelType] = useState('Electric')
-  const [distance, setDistance] = useState('1')
+  const [distance, setDistance] = useState('')
   const [unit, setUnit] = useState<'km' | 'mi'>('km')
   const [origin, setOrigin] = useState('')
   const [destination, setDestination] = useState('')
@@ -60,50 +60,74 @@ function LogPanel() {
   const [route, setRoute] = useState<RouteResult | null>(null)
   const [routeStatus, setRouteStatus] = useState<'idle' | 'finding' | 'error'>('idle')
   const [routeError, setRouteError] = useState('')
+  // The lookup in progress, so calculate can wait for it instead of starting another
+  const pendingRoute = useRef<Promise<RouteResult | null> | null>(null)
 
   const isCar = mode === 'car'
   const isFlight = mode === 'flight'
-  const canFind = origin.trim() !== '' && destination.trim() !== '' && routeStatus !== 'finding'
+  const hasPlaces = origin.trim() !== '' && destination.trim() !== ''
+  const canFind = hasPlaces && routeStatus !== 'finding'
 
-  // A found distance no longer applies once the trip changes
+  // A found distance no longer applies once the trip changes; a typed one stays
   function changeTrip(update: () => void) {
     update()
+    if (route) setDistance('')
     setRoute(null)
     setRouteStatus('idle')
   }
 
-  async function findDistance() {
+  function findDistance() {
+    pendingRoute.current ??= lookUpDistance().finally(() => (pendingRoute.current = null))
+    return pendingRoute.current
+  }
+
+  async function lookUpDistance() {
     setRouteStatus('finding')
     try {
       const found = await findRoute(mode, origin, destination)
       setDistance(inUnit(found.km, unit))
       setRoute(found)
       setRouteStatus('idle')
+      return found
     } catch (error) {
       setRouteError(
         error instanceof RouteError ? error.message : "Couldn't reach the map service. Type the distance instead.",
       )
       setRouteStatus('error')
+      return null
     }
   }
 
-  function handleSubmit(e: FormEvent) {
+  // Look the distance up as soon as both places are in, unless one was typed
+  function findIfReady() {
+    if (canFind && !route && distance === '') void findDistance()
+  }
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    let found = route
+    let km = distance
+    // Both places but no distance yet: look it up (or finish the lookup leaving the
+    // To box started) and save in the same click, rather than make people press Find
+    if (pendingRoute.current || (distance === '' && hasPlaces)) {
+      found = await findDistance()
+      if (!found) return
+      km = inUnit(found.km, unit)
+    }
     const entry: TravelEntry = {
       mode,
       fuelType: isCar ? fuelType : null,
-      distance: Number(distance),
+      distance: Number(km),
       unit,
       origin: origin || null,
       destination: destination || null,
       date,
       description,
     }
-    // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
     const modeLabel = MODES.find((m) => m.id === mode)?.label ?? mode
-    const places = route ? `${route.from} → ${route.to}` : origin || destination ? `${origin || '?'} → ${destination || '?'}` : ''
-    const trip = [places, `${distance} ${unit}`].filter(Boolean).join(' · ')
+    const places = found ? `${found.from} → ${found.to}` : origin || destination ? `${origin || '?'} → ${destination || '?'}` : ''
+    const trip = [places, `${km} ${unit}`].filter(Boolean).join(' · ')
     addLogItem({
       kind: 'travel',
       date,
@@ -153,21 +177,23 @@ function LogPanel() {
 
           <div className={`travel__fields travel__fields--route${isCar ? ' travel__fields--car' : ''}`}>
             <label className="field field--origin">
-              <span className="field__label">{isFlight ? 'From airport' : 'From'} (optional)</span>
+              <span className="field__label">{isFlight ? 'From airport' : 'From'}</span>
               <input
                 className="field__input"
                 placeholder={isFlight ? 'e.g. Heathrow' : 'e.g. Oxford station'}
                 value={origin}
                 onChange={(e) => changeTrip(() => setOrigin(e.target.value))}
+                onBlur={findIfReady}
               />
             </label>
             <label className="field field--destination">
-              <span className="field__label">{isFlight ? 'To airport' : 'To'} (optional)</span>
+              <span className="field__label">{isFlight ? 'To airport' : 'To'}</span>
               <input
                 className="field__input"
                 placeholder={isFlight ? 'e.g. Amsterdam' : 'e.g. London Paddington'}
                 value={destination}
                 onChange={(e) => changeTrip(() => setDestination(e.target.value))}
+                onBlur={findIfReady}
               />
             </label>
 
@@ -188,7 +214,7 @@ function LogPanel() {
 
             <div className="field field--distance">
               <label className="field__label" htmlFor="distance">
-                Distance
+                Or distance
               </label>
               <div className="field__row">
                 <input
@@ -197,9 +223,14 @@ function LogPanel() {
                   type="number"
                   min="0"
                   step="any"
-                  required
+                  required={!hasPlaces}
+                  placeholder={hasPlaces ? 'Found from the route' : 'e.g. 12'}
                   value={distance}
-                  onChange={(e) => changeTrip(() => setDistance(e.target.value))}
+                  onChange={(e) => {
+                    setDistance(e.target.value)
+                    setRoute(null)
+                    setRouteStatus('idle')
+                  }}
                 />
                 <select
                   className="field__input field__input--unit"
@@ -230,7 +261,7 @@ function LogPanel() {
                   ? routeError
                   : route
                     ? `${route.from} → ${route.to}, by ${route.method}. One way.`
-                    : 'One way. Fill in From and To and press Find, or type it.'}
+                    : 'One way. Fill in From and To, or the distance.'}
               </span>
             </div>
 
@@ -256,8 +287,9 @@ function LogPanel() {
 
             <LogResult />
 
-            <button type="submit" className="calculate">
-              calculate!
+            {/* Never disabled: leaving the To box starts a lookup just before this click lands */}
+            <button type="submit" className="calculate" aria-busy={routeStatus === 'finding'}>
+              {routeStatus === 'finding' ? 'finding…' : 'calculate!'}
             </button>
           </div>
         </form>

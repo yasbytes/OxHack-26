@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
-//idk why form event has a line 
-//this is Gemini API go check backend ai.py and journey.py
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+// Gemini API: see backend ai.py and journey.py
+// Empty string means "same origin", so the Vite proxy forwards /api to the backend
+const API = import.meta.env.VITE_API_URL ?? ''
 
 type Option = { mode: string; label: string; kg: number }
 type Reply = {

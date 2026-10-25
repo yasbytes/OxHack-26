@@ -55,7 +55,6 @@ function FoodForm() {
       date,
       description,
     }
-    // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
     const categoryLabel = CATEGORIES.find((c) => c.id === category)?.label
     const portionLabel = PORTIONS.find((p) => p.servings === Number(servings))?.label

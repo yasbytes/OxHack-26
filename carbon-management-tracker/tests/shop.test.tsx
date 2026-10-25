@@ -3,6 +3,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 vi.mock('../src/toast', () => ({ showToast: vi.fn() }))
 import { addLogItem, setLogUser } from '../src/logStore'
 import { buyItem, feedItem, setShopUser, SHOP_ITEMS, useFed, useShop } from '../src/shopStore'
+
+function savedShop() {
+  return JSON.parse(localStorage.getItem('shop:alice') ?? '{}') as { owned: { treats: number } }
+}
 import { fedMood, MOODS } from '../src/pet'
 import { localDate } from '../src/dates'
 
@@ -51,4 +55,20 @@ it('a meal lifts the mood one level, but not past thriving', () => {
   expect(fedMood(MOODS[2], true)).toBe(MOODS[1])
   expect(fedMood(MOODS[0], true)).toBe(MOODS[0])
   expect(fedMood(MOODS[2], false)).toBe(MOODS[2])
+  // A collapsed cat only comes round during its one revive
+  expect(fedMood(MOODS[4], true)).toBe(MOODS[4])
+  expect(fedMood(MOODS[4], true, true)).toBe(MOODS[3])
+})
+
+it('food revives a collapsed cat once, and again only after it recovers', () => {
+  const { result } = renderHook(useFed)
+  act(() => { buyItem(treats); buyItem(treats) })
+  // Way over this week's budget
+  act(() => addLogItem({ kind: 'travel', date: localDate(), title: 'Flight', detail: '', kg: 1000 }))
+  expect(result.current.reviveUsed).toBe(false)
+  act(() => feedItem(treats, 'Tom'))
+  expect(result.current).toMatchObject({ reviving: true, reviveUsed: true })
+  // A second meal is refused and keeps the food
+  act(() => feedItem(treats, 'Tom'))
+  expect(savedShop().owned.treats).toBe(1)
 })

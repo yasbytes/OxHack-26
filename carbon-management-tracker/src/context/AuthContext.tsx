@@ -4,7 +4,8 @@ import supabase from '../supabase-client'
 import { authErrorMessage } from '../auth-errors'
 import { setLogUser } from '../logStore'
 import { setShopUser } from '../shopStore'
-import { nameFromEmail } from '../profileStore'
+import { nameFromEmail, setProfileUser } from '../profileStore'
+import { setFriendsUser } from '../friendsStore'
 
 type AuthResult = {
   success: boolean
@@ -27,6 +28,14 @@ type AuthContextValue = {
 const DEMO_PASSWORD_ERROR = 'Demo mode has no passwords to reset. Log in with any password.'
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+// Points every store at the signed-in account's data
+function selectUser(userId: string | null) {
+  setLogUser(userId)
+  setShopUser(userId)
+  setProfileUser(userId)
+  setFriendsUser(userId)
+}
 
 // Demo mode: without Supabase keys, any email and password logs in and the
 // account lives only in this browser. Real auth takes over once keys are set.
@@ -65,13 +74,12 @@ function loadDemoSession() {
   return user ? demoSession(user) : null
 }
 
-// Same pattern as the course: one provider owns the session and all auth actions.
+// One provider owns the session and all auth actions.
 export function AuthContextProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null | undefined>(() => {
     if (supabase) return undefined
     const demo = loadDemoSession()
-    setLogUser(demo?.user.id ?? null)
-    setShopUser(demo?.user.id ?? null)
+    selectUser(demo?.user.id ?? null)
     return demo
   })
   const [error, setError] = useState<string | null>(null)
@@ -80,8 +88,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   function startDemoSession(user: DemoUser | null) {
     writeJson(DEMO_SESSION_KEY, user)
     const next = user ? demoSession(user) : null
-    setLogUser(next?.user.id ?? null)
-    setShopUser(next?.user.id ?? null)
+    selectUser(next?.user.id ?? null)
     setSession(next)
     return next
   }
@@ -93,8 +100,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 
     function update(nextSession: Session | null, nextError: string | null = null) {
       if (!active) return
-      setLogUser(nextSession?.user.id ?? null)
-      setShopUser(nextSession?.user.id ?? null)
+      selectUser(nextSession?.user.id ?? null)
       setSession(nextSession)
       setError(nextError)
     }
@@ -204,7 +210,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// The tutorial keeps the provider and its consumer hook together.
+// The provider and its consumer hook live together.
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)

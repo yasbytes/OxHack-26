@@ -115,7 +115,6 @@ function HomeEnergyForm() {
     } else {
       entry = { method, text, date }
     }
-    // TODO: send to the backend calculator once the API exists
     console.log('calculate', entry)
     addLogItem({ kind: 'energy', date, ...energySummary(), ...energyKg() })
   }

@@ -268,16 +268,6 @@
   margin-right: auto;
 }
 
-.result__pet {
-  flex: 0 0 auto;
-  height: 60px;
-  image-rendering: pixelated;
-}
-
-.result__pet--sick {
-  height: 41px;
-}
-
 .result__main {
   flex: 1;
   min-width: 0;
