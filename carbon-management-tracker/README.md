@@ -24,11 +24,11 @@ Open the exact Local URL printed by Vite.
 
 7. Create the app's tables: open the Supabase SQL editor, paste in `supabase/migrations/20261025000000_app_data.sql` and run it. It's safe to run again.
 
-The browser talks directly to Supabase for login and for its own data. Python is only needed for the quick log.
+The browser talks directly to Supabase for login and for its own data. The app doesn't need the Python backend to run.
 
-## Backend (quick log)
+## Backend
 
-The quick log sends free text to the FastAPI app in `backend/`, which checks the user's Supabase login, asks Gemini to pick out the activities, and works out their kg with the same factors as the forms (`backend/app/factors.py`).
+The FastAPI app in `backend/` has `/api/net-worth` and `/api/compare`, which read the signed-in user's log, and `/api/ask`, which sends a prompt to Gemini (`backend/app/ai.py`).
 
 ```powershell
 cd backend
@@ -38,7 +38,7 @@ cd ..
 npm run api
 ```
 
-`backend/.env` uses the same publishable key as the front end: the API acts as the signed-in user, so row level security still applies. In development Vite forwards `/api` to `http://localhost:8000`. A deployed front end sets `VITE_API_URL` to the API's address, and the API lists that origin in `ALLOWED_ORIGINS`. Without the API, quick logs are still saved, just without an estimate.
+`backend/.env` uses the same publishable key as the front end: the API acts as the signed-in user, so row level security still applies. In development Vite forwards `/api` to `http://localhost:8000`. A front end served from another domain needs that origin listed in `ALLOWED_ORIGINS`.
 
 Login errors appear in the form. Missing or invalid local settings disable submission and print a setup error in the development console instead of crashing the app.
 
