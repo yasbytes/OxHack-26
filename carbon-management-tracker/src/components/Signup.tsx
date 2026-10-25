@@ -40,7 +40,7 @@ function Signup() {
           <h1 className="login__title">Create your account</h1>
           <p className="login__intro">Track your footprint. Build a greener future.</p>
         </div>
-        {!configured && <p className="login__notice login__notice--error" role="alert">Account access is not available yet. Please try again later.</p>}
+        {!configured && <p className="login__notice">Demo mode: your account is saved in this browser only.</p>}
         {(state.error || sessionError) && <p className="login__notice login__notice--error" role="alert">{state.error || sessionError}</p>}
         {state.message && <p className="login__notice" role="status">{state.message}</p>}
         <fieldset className="login__fields" disabled={isPending}>
@@ -73,7 +73,7 @@ function Signup() {
               autoComplete="new-password" required minLength={8} placeholder="Enter your password again" />
           </div>
         </fieldset>
-        <button type="submit" className="login__submit" disabled={isPending || !configured}>
+        <button type="submit" className="login__submit" disabled={isPending}>
           {isPending ? 'Creating account…' : 'Create account'}
         </button>
       </form>

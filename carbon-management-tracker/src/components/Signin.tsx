@@ -35,7 +35,7 @@ function Signin() {
           <h1 className="login__title">Log in to your account</h1>
           <p className="login__intro">Track your footprint. Build a greener future.</p>
         </div>
-        {!configured && <p className="login__notice login__notice--error" role="alert">Account access is not available yet. Please try again later.</p>}
+        {!configured && <p className="login__notice">Demo mode: your account is saved in this browser only.</p>}
         {(state.error || sessionError) && <p className="login__notice login__notice--error" role="alert">{state.error || sessionError}</p>}
         <fieldset className="login__fields" disabled={isPending}>
           <legend className="sr-only">Login details</legend>
@@ -56,7 +56,7 @@ function Signin() {
             </div>
           </div>
         </fieldset>
-        <button type="submit" className="login__submit" disabled={isPending || !configured}>
+        <button type="submit" className="login__submit" disabled={isPending}>
           {isPending ? 'Logging in…' : 'Log in'}
         </button>
       </form>
