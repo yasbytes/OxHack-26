@@ -9,7 +9,58 @@ const TIP_GAP = 110 // how far above the line the tooltip sits
 type Props = { data: YearData; limitTonnes: number }
 type Hover = { day: number; tonnes: number; projected: boolean }
 
+<<<<<<< HEAD
 function ProjectionChart({ data, limitTonnes }: Props) {
+=======
+type Props = {
+  yearTonnes: number
+  // Last 8 weeks, oldest first, so the recent part of the line has real shape
+  weeklyKg: number[]
+  limitTonnes: number
+  // kg a day since logging began this year, carried on to 31 December
+  paceKgPerDay: number
+}
+
+// Running total for the year: a steady pace up to 8 weeks ago, the real weekly
+// totals since then, and the current pace carried on to 31 December
+function buildSeries(yearTonnes: number, weeklyKg: number[], paceKgPerDay: number, today: Date) {
+  const start = new Date(today.getFullYear(), 0, 1)
+  const daysInYear = Math.round((new Date(today.getFullYear() + 1, 0, 1).getTime() - start.getTime()) / DAY_MS)
+  const elapsed = Math.max(1, Math.round((today.getTime() - start.getTime()) / DAY_MS))
+  const yearKg = yearTonnes * 1000
+  const recentDays = Math.min(weeklyKg.length * 7, elapsed)
+  const recentKg = weeklyKg.reduce((sum, kg) => sum + kg, 0)
+  const earlierKg = Math.max(0, yearKg - recentKg)
+  const earlierDays = elapsed - recentDays
+
+  function actualAt(day: number) {
+    if (day <= earlierDays) return earlierDays ? (earlierKg * day) / earlierDays : 0
+    const intoRecent = day - earlierDays
+    const week = Math.min(Math.floor(intoRecent / 7), weeklyKg.length - 1)
+    const before = weeklyKg.slice(0, week).reduce((sum, kg) => sum + kg, 0)
+    return earlierKg + before + (weeklyKg[week] * (intoRecent - week * 7)) / 7
+  }
+
+  const points: Point[] = []
+  for (let day = 0; day < elapsed; day += 7) {
+    points.push({ day, tonnes: actualAt(day) / 1000, projected: false })
+  }
+  points.push({ day: elapsed, tonnes: yearTonnes, projected: false })
+  const projectedAt = (day: number) => (yearKg + paceKgPerDay * (day - elapsed)) / 1000
+  for (let day = elapsed + 7; day < daysInYear; day += 7) {
+    points.push({ day, tonnes: projectedAt(day), projected: true })
+  }
+  points.push({ day: daysInYear, tonnes: projectedAt(daysInYear), projected: true })
+
+  return { points, start, daysInYear, elapsed }
+}
+
+function dateFor(start: Date, day: number) {
+  return new Date(start.getTime() + day * DAY_MS)
+}
+
+function ProjectionChart({ yearTonnes, weeklyKg, limitTonnes, paceKgPerDay }: Props) {
+>>>>>>> origin/main
   const wrapRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(600)
   const [active, setActive] = useState<Hover | null>(null)
@@ -22,10 +73,20 @@ function ProjectionChart({ data, limitTonnes }: Props) {
     return () => observer.disconnect()
   }, [])
 
+<<<<<<< HEAD
   const { points, months, year, daysInYear, daysElapsed, daysLeft, windowDays, dailyAvgKg, soFarKg, projectedKg } = data
   const start = new Date(year, 0, 1)
   const soFarT = soFarKg / 1000
   const yearEnd = projectedKg / 1000
+=======
+  const [today] = useState(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  })
+  const { points, start, daysInYear, elapsed } = buildSeries(yearTonnes, weeklyKg, paceKgPerDay, today)
+  const yearEnd = points[points.length - 1].tonnes
+>>>>>>> origin/main
   const overLimit = yearEnd > limitTonnes
 
   const top = Math.max(1, Math.ceil(Math.max(yearEnd, limitTonnes) * 1.1))

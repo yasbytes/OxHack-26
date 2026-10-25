@@ -22,6 +22,12 @@ export function moodFor(weekKg: number, budgetKg: number): Mood {
   return MOODS.find((m) => ratio < m.max) ?? MOODS[MOODS.length - 1]
 }
 
+// A recent meal lifts the mood one level, but never past thriving
+export function fedMood(mood: Mood, fed: boolean): Mood {
+  if (!fed) return mood
+  return MOODS[Math.max(0, MOODS.indexOf(mood) - 1)]
+}
+
 export function loadPetName() {
   try {
     return localStorage.getItem(PET_NAME_KEY) ?? ''

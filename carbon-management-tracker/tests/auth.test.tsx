@@ -4,7 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 
 const auth = vi.hoisted(() => ({
   getSession: vi.fn(), signInWithPassword: vi.fn(), signUp: vi.fn(), signOut: vi.fn(),
-  onAuthStateChange: vi.fn(), unsubscribe: vi.fn(),
+  onAuthStateChange: vi.fn(), unsubscribe: vi.fn(), resetPasswordForEmail: vi.fn(), updateUser: vi.fn(),
 }))
 vi.mock('../src/supabase-client', () => ({ default: { auth } }))
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -209,5 +209,36 @@ describe('account access', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('Check your connection')
     await waitFor(() => expect((screen.getByRole('button', { name: 'Log in' }) as HTMLButtonElement).disabled).toBe(false))
   })
-})
 
+  it('sends a password reset email from the login page', async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null })
+    await showLogin()
+    fireEvent.click(screen.getByRole('link', { name: 'Forgot password?' }))
+    await screen.findByRole('heading', { name: 'Reset your password' })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'person@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }))
+    expect((await screen.findByRole('status')).textContent).toContain('a reset link is on its way')
+    expect(auth.resetPasswordForEmail).toHaveBeenCalledWith('person@example.com', {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+  })
+
+  it('sets a new password from the reset link, even when it lands on the home page', async () => {
+    auth.updateUser.mockResolvedValue({ data: { user: session.user }, error: null })
+    renderApp('/')
+    await screen.findByRole('heading', { name: 'Log in to your account' })
+    await act(async () => notify('PASSWORD_RECOVERY', session))
+    await screen.findByRole('heading', { name: 'Choose a new password' })
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'new-password-1' } })
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'new-password-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save new password' }))
+    await screen.findByRole('heading', { name: /Alex!/ })
+    expect(auth.updateUser).toHaveBeenCalledWith({ password: 'new-password-1' })
+  })
+
+  it('explains an expired reset link', async () => {
+    renderApp('/reset-password')
+    await screen.findByRole('heading', { name: 'This link has expired' })
+    expect(screen.getByRole('link', { name: 'Send a new link' }).getAttribute('href')).toBe('/forgot-password')
+  })
+})

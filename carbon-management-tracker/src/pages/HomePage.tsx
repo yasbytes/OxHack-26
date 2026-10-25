@@ -3,15 +3,10 @@ import { useAuth } from '../context/AuthContext'
 import LogPanel from '../components/LogPanel.tsx'
 import PetCard from '../components/PetCard.tsx'
 import { addLogItem } from '../logStore.ts'
-import { COINS } from '../sampleData.ts'
 import { useLimits, useProfile } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
-import cloud1 from '../assets/icons/cloud-1.svg'
-import cloud2 from '../assets/icons/cloud-2.svg'
-import cloud4 from '../assets/icons/cloud-4.svg'
-
-// Placeholders until auth, weather and the backend are wired up
-const TEMPERATURE_C = 13
+import WeatherBadge from '../components/WeatherBadge.tsx'
+import { localDate } from '../dates.ts'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -39,7 +34,7 @@ function HomePage() {
     console.log('quick log', quickLog)
     addLogItem({
       kind: 'quick',
-      date: new Date().toISOString().slice(0, 10),
+      date: localDate(),
       title: quickLog,
       detail: '',
       // Free text needs Gemini to read it, so there's no estimate yet
@@ -54,17 +49,7 @@ function HomePage() {
         <h1 className="header__greeting">
           {greeting()}{name ? ` ${name}` : ''}!
         </h1>
-        <div className="weather" aria-label={`${TEMPERATURE_C} degrees, cloudy`}>
-          <div className="weather__cloud" aria-hidden="true">
-            <div className="weather__cloud-inner">
-              <img src={cloud1} alt="" style={{ left: 0, top: 26 }} />
-              <img src={cloud4} alt="" style={{ left: 32, top: 26 }} />
-              <img src={cloud2} alt="" style={{ left: 23, top: 0 }} />
-              <img src={cloud1} alt="" style={{ left: 45, top: 24 }} />
-            </div>
-          </div>
-          <span className="weather__temp">{TEMPERATURE_C}°C</span>
-        </div>
+        <WeatherBadge />
       </header>
 
       <div className="hero-row">
@@ -95,7 +80,7 @@ function HomePage() {
             </p>
           </div>
         </section>
-        <PetCard weekKg={weekKg} budgetKg={weeklyBudgetKg} coins={COINS} />
+        <PetCard weekKg={weekKg} budgetKg={weeklyBudgetKg} />
       </div>
 
       <form className="quick-log-row" onSubmit={handleQuickLog}>

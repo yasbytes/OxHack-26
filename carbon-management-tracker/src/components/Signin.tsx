@@ -45,7 +45,10 @@ function Signin() {
               required placeholder="Enter your email" defaultValue={state.email} />
           </div>
           <div className="login__field">
-            <label className="login__label" htmlFor="signin-password">Password</label>
+            <div className="login__label-row">
+              <label className="login__label" htmlFor="signin-password">Password</label>
+              <Link className="login__forgot" to="/forgot-password">Forgot password?</Link>
+            </div>
             <div className="login__password">
               <input id="signin-password" name="password" className="login__input" type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password" required placeholder="Enter your password" />
