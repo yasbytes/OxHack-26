@@ -4,6 +4,7 @@ import { fedMood, moodFor, type Mood } from '../pet.ts'
 import { updateProfile, useProfile } from '../profileStore.ts'
 import { feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
 import { useLastAdded } from '../logStore.ts'
+import { reactionFor } from '../petReactions.ts'
 
 const MAX_NAME_LENGTH = 20
 
@@ -27,25 +28,45 @@ function PetCard({ weekKg, budgetKg }: Props) {
   // The line the cat is saying right now, shown in a speech bubble while it plays
   const [speech, setSpeech] = useState<string | null>(null)
   const voice = useRef<HTMLAudioElement | null>(null)
+  const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const speechVersion = useRef(0)
+  const lastAdded = useLastAdded()
+  const line = lastAdded ? reactionFor(lastAdded) : { says: mood.says, voice: mood.voice }
 
   // Stop talking when the card goes away
-  useEffect(() => () => voice.current?.pause(), [])
+  useEffect(() => () => {
+    speechVersion.current++
+    voice.current?.pause()
+    if (speechTimer.current) clearTimeout(speechTimer.current)
+  }, [])
 
   function speak() {
-    if (!mood.says || !mood.voice) return
+    if (!line.says) return
     voice.current?.pause()
-    const audio = new Audio(mood.voice)
+    if (speechTimer.current) clearTimeout(speechTimer.current)
+    const version = ++speechVersion.current
+    setSpeech(line.says)
+    const done = () => { if (speechVersion.current === version) setSpeech(null) }
+    const keepText = () => {
+      if (speechVersion.current !== version) return
+      if (speechTimer.current) clearTimeout(speechTimer.current)
+      speechTimer.current = setTimeout(done, 6000)
+    }
+    if (!line.voice) {
+      keepText()
+      return
+    }
+    const audio = new Audio(line.voice)
     voice.current = audio
-    setSpeech(mood.says)
-    const done = () => { if (voice.current === audio) setSpeech(null) }
     audio.addEventListener('ended', done)
-    // If the sound can't play, the bubble still shows the line for a moment
-    audio.play().catch(() => setTimeout(done, 2500))
+    audio.addEventListener('error', keepText)
+    // If autoplay is blocked, keep the caption; clicking the cat replays it.
+    audio.play().catch(keepText)
   }
 
-  // Each new log entry gets a word from the cat, in the mood that entry leaves it in.
+  // Each new log gets a reaction to that activity, independently of the weekly mood.
   // Whatever was logged before this card appeared has already been heard.
-  const lastAddedId = useLastAdded()?.id ?? null
+  const lastAddedId = lastAdded?.id ?? null
   const heardId = useRef(lastAddedId)
   const speakAboutLog = useEffectEvent(speak)
   useEffect(() => {
@@ -77,7 +98,7 @@ function PetCard({ weekKg, budgetKg }: Props) {
           {speech}
         </p>
       )}
-      {mood.says ? (
+      {line.says ? (
         <button
           type="button"
           className={`pet__art pet__art--${mood.id} pet__art--talks`}
