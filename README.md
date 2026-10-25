@@ -23,3 +23,4 @@ Gemini AI
 2. to keep backend running (cd backend, then uvicorn app.main:app --reload)
 3. run npm run dev after cd carbon-management-tracker
 4. to check the AI enter 'http://localhost:8000' 
+5. You need GEMINI_API_KEY in their own backend/.env and must run pip install google-genai.
