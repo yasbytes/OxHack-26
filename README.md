@@ -5,10 +5,10 @@ Project for OxHack 26. Track your carbon footprint, see where it comes from, for
 
 | Name | Role | What they built |
 |---|---|---|
-| **Nina** | Backend & AI | Gemini API setup, backend, Supabase |
-| **Yasmine** | Full stack | Supabase, backend, React + Vite |
-| **Sabrina** | Frontend & voice | Frontend, UI/UX, ElevenLabs |
-| **Amal** | Full stack | Backend, frontend |
+| **Nina** | Backend & AI | Backend: Python and Supabase, Gemini API setup |
+| **Yasmine** | Fullstack | Frontend: React + Vite, Backend: Supabase |
+| **Sabrina** | Frontend & Figma Design | React + Vite and ElevenLabs |
+| **Amal** | Backend | Python and Supabase |
 
 ## Tech stack
 
