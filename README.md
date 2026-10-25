@@ -6,9 +6,9 @@ Project for OxHack 26. Track your carbon footprint, see where it comes from, for
 | Name | Role | What they built |
 |---|---|---|
 | **Nina** | Backend & AI | Gemini API setup, backend, Supabase |
-| **Amal** | Full stack | Backend, frontend |
-| **Sabrina** | Frontend & voice | Frontend, UI/UX, ElevenLabs |
 | **Yasmine** | Full stack | Supabase, backend, React + Vite |
+| **Sabrina** | Frontend & voice | Frontend, UI/UX, ElevenLabs |
+| **Amal** | Full stack | Backend, frontend |
 
 ## Tech stack
 
@@ -39,7 +39,6 @@ pip install fastapi uvicorn pydantic python-dotenv supabase google-genai
 **Install the frontend packages**
 
 ```
-cd carbon-management-tracker
 npm install
 ```
 
@@ -47,7 +46,7 @@ If `npm` isn't found, install Node.js first and check with `npm -v`.
 
 **Add your secret keys**
 
-Copy `backend/.env.example` to `backend/.env` and fill in:
+Copy `backend/.env.example` to `backend/.env` and add in:
 
 ```
 GEMINI_API_KEY=your_key_here
@@ -72,7 +71,7 @@ cd carbon-management-tracker
 npm run dev
 ```
 
-Open the link it prints (usually http://localhost:5173).
+Open the link it prints
 
 ## Ask Gemini (AI advice)
 
@@ -87,7 +86,7 @@ To test the backend on its own:
    {"question": "train from Manchester to London"}
    ```
 
-Emission numbers come from fixed factors in the backend, not from Gemini, so they stay consistent. Gemini only reads the question and writes the advice.
+Emission numbers come from fixed factors in the backend, not from Gemini.
 
 ## Troubleshooting
 
