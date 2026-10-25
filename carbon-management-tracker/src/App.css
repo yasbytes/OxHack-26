@@ -1790,6 +1790,105 @@
   background: #fff;
 }
 
+/* Info: how the app works */
+.info__card {
+  max-width: var(--content-max);
+  padding: 20px 28px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info__card a {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.info__lead {
+  margin: 0;
+  font-size: clamp(18px, 1.8vw, 21px);
+  line-height: 1.45;
+}
+
+.info__steps {
+  margin: 0;
+  padding-left: 22px;
+  list-style: decimal;
+  display: grid;
+  gap: 8px;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.info__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 16px;
+  max-width: var(--content-max);
+}
+
+.info__steps li::marker,
+.info__list li::marker {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.info__text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.info__list {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc;
+  display: grid;
+  gap: 6px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.info__note {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.8;
+}
+
+.info__moods {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.info__mood {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+}
+
+.info__mood-img {
+  height: 44px;
+  width: 44px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.info__mood-range {
+  display: block;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+@media (max-width: 720px) {
+  .info__card {
+    padding: 16px 18px 18px;
+  }
+}
+
 /* Gemini answer, under the Ask Gemini box */
 .ai-reply {
   max-width: var(--content-max);
