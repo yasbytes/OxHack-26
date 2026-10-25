@@ -7,6 +7,9 @@ import { useLimits, useProfile } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
 import WeatherBadge from '../components/WeatherBadge.tsx'
 import { localDate } from '../dates.ts'
+import { parseQuickLog } from '../api.ts'
+import { cloudFor } from '../cloud.ts'
+import { showToast } from '../toast.ts'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -21,6 +24,7 @@ function HomePage() {
   const accountName = typeof user?.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
     ? user.user_metadata.full_name.trim() : user?.email?.split('@')[0] || 'there'
   const [quickLog, setQuickLog] = useState('')
+  const [reading, setReading] = useState(false)
   const { yearTonnes, monthKg, weekKg } = useFootprint()
   const { name: profileName } = useProfile()
   const name = profileName || accountName
@@ -28,16 +32,33 @@ function HomePage() {
   const month = Math.round(monthKg)
   const overLimit = month > monthlyLimitKg
 
-  function handleQuickLog(e: FormEvent) {
+  async function handleQuickLog(e: FormEvent) {
     e.preventDefault()
-    // TODO: send to the backend for Gemini to parse once the API exists
-    console.log('quick log', quickLog)
+    const text = quickLog.trim()
+    const date = localDate()
+    // Gemini needs the backend and a real account; demo accounts save the note as it is
+    if (cloudFor(user?.id ?? null)) {
+      setReading(true)
+      try {
+        const entries = await parseQuickLog(text)
+        if (entries.length > 0) {
+          entries.forEach((entry) => addLogItem({ ...entry, date }))
+          if (entries.length > 1) showToast(`Saved ${entries.length} activities`)
+          setQuickLog('')
+          return
+        }
+      } catch {
+        // Saved below without an estimate instead
+      } finally {
+        setReading(false)
+      }
+    }
     addLogItem({
       kind: 'quick',
-      date: localDate(),
-      title: quickLog,
+      date,
+      title: text,
       detail: '',
-      // Free text needs Gemini to read it, so there's no estimate yet
+      // Nothing in it could be worked out, so there's no estimate
       kg: null,
     })
     setQuickLog('')
@@ -98,8 +119,8 @@ function HomePage() {
           />
         </section>
         <div className="card quick-log__submit-card">
-          <button type="submit" className="quick-log__submit">
-            calculate journey
+          <button type="submit" className="quick-log__submit" disabled={reading}>
+            {reading ? 'reading…' : 'calculate journey'}
           </button>
         </div>
       </form>

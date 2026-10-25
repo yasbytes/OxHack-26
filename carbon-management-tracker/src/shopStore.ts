@@ -3,11 +3,12 @@ import { showToast } from './toast.ts'
 import { coinsEarned, START_COINS } from './coins.ts'
 import { getLogItems, useLog } from './logStore.ts'
 import { getProfile, useProfile } from './profileStore.ts'
+import { cloudFor, fetchSoon, pushChange, reportSyncError } from './cloud.ts'
 import foodBowl from './assets/shop/food-bowl.png'
 import catTreats from './assets/shop/cat-treats.png'
 
-// Front end only: spending and food live in this browser, one wallet per account,
-// until the backend keeps them. Coins earned come from the log (coins.ts).
+// One wallet per account, cached in this browser and kept in the shop_state table
+// for real accounts. Coins earned come from the log (coins.ts), so only spending is saved.
 
 export const SHOP_ITEMS = [
   {
@@ -42,6 +43,7 @@ export type ShopState = {
 
 const EMPTY: ShopState = { spent: 0, owned: { treats: 0, bowl: 0 }, fedUntil: 0 }
 
+let userId: string | null = null
 let storageKey: string | null = null
 
 function load(): ShopState {
@@ -60,21 +62,57 @@ function load(): ShopState {
 let state = load()
 const listeners = new Set<() => void>()
 
-export function setShopUser(userId: string | null) {
-  const nextKey = userId ? `shop:${userId}` : null
+export function setShopUser(nextUserId: string | null) {
+  const nextKey = nextUserId ? `shop:${nextUserId}` : null
   if (storageKey === nextKey) return
+  userId = nextUserId
   storageKey = nextKey
   state = load()
   listeners.forEach((l) => l())
+  fetchSoon(pull)
 }
 
-function save(next: ShopState) {
+type ShopRow = { spent: number; owned: Partial<ShopState['owned']>; fed_until: number }
+
+// The account's wallet wins; an account with none yet saves this browser's
+async function pull() {
+  const cloud = cloudFor(userId)
+  if (!cloud) return
+  const key = storageKey
+  try {
+    const { data, error } = await cloud.from('shop_state').select('spent, owned, fed_until').maybeSingle()
+    if (error) throw error
+    if (storageKey !== key) return
+    if (!data) {
+      if (state !== EMPTY) push(state)
+      return
+    }
+    const row = data as ShopRow
+    save({ spent: row.spent, owned: { ...EMPTY.owned, ...row.owned }, fedUntil: Number(row.fed_until) }, false)
+  } catch (error) {
+    reportSyncError(error)
+  }
+}
+
+function push(next: ShopState) {
+  pushChange(userId, (cloud) =>
+    cloud.from('shop_state').upsert({
+      spent: next.spent,
+      owned: next.owned,
+      fed_until: next.fedUntil,
+      updated_at: new Date().toISOString(),
+    }),
+  )
+}
+
+function save(next: ShopState, sync = true) {
   state = next
   try {
     if (storageKey) localStorage.setItem(storageKey, JSON.stringify(state))
   } catch {
     // Storage can be blocked (private windows); the shop still works for this visit
   }
+  if (sync) push(state)
   listeners.forEach((l) => l())
 }
 

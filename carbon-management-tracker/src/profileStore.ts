@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
+import { cloudFor, fetchSoon, pushChange, reportSyncError } from './cloud.ts'
 
-// Front end only: the profile lives in this browser until auth and the backend exist
+// One profile per account: cached in this browser and, for real accounts, kept
+// in the profiles table
 
 export const DIETS = [
   { id: 'meat', label: 'I eat meat and plant foods', food: 'other_meat' },
@@ -17,6 +19,7 @@ export type Profile = {
   diet: Diet
   // The monthly footprint from travel, home energy and food the user has to stay under
   monthlyLimitKg: number
+  petName: string
 }
 
 // The average UK person's travel, home energy and food, the parts this app
@@ -34,27 +37,70 @@ const DEFAULT_PROFILE: Profile = {
   household: 1,
   diet: 'meat',
   monthlyLimitKg: MAX_MONTHLY_LIMIT_KG,
+  petName: '',
 }
 
-const STORAGE_KEY = 'profile'
+// Saved before profiles were kept per account; the first account to log in on
+// this browser takes them over
+const LEGACY_KEY = 'profile'
+const LEGACY_PET_NAME_KEY = 'pet-name'
+
+type ProfileRow = {
+  name: string
+  household: number
+  diet: Diet
+  monthly_limit_kg: number
+  pet_name: string
+}
+
+function toRow(p: Profile): ProfileRow {
+  return {
+    name: p.name,
+    household: p.household,
+    diet: p.diet,
+    monthly_limit_kg: p.monthlyLimitKg,
+    pet_name: p.petName,
+  }
+}
+
+function clean(parsed: Partial<Profile> & { limitTonnes?: number }): Profile {
+  // Profiles saved before the limit went monthly stored a yearly figure in tonnes
+  if (parsed.monthlyLimitKg === undefined && parsed.limitTonnes !== undefined) {
+    parsed.monthlyLimitKg = Math.round((parsed.limitTonnes * 1000) / 12)
+  }
+  delete parsed.limitTonnes
+  if (parsed.monthlyLimitKg !== undefined) {
+    parsed.monthlyLimitKg = Math.min(
+      Math.max(parsed.monthlyLimitKg, MIN_MONTHLY_LIMIT_KG),
+      MAX_MONTHLY_LIMIT_KG,
+    )
+  }
+  if (parsed.household !== undefined) {
+    parsed.household = Math.min(Math.max(Math.round(parsed.household) || 1, 1), 20)
+  }
+  return { ...DEFAULT_PROFILE, ...parsed }
+}
+
+let userId: string | null = null
+let storageKey: string | null = null
+
+function readLegacy(): Profile | null {
+  const saved = localStorage.getItem(LEGACY_KEY)
+  const petName = localStorage.getItem(LEGACY_PET_NAME_KEY)
+  if (saved === null && petName === null) return null
+  localStorage.removeItem(LEGACY_KEY)
+  localStorage.removeItem(LEGACY_PET_NAME_KEY)
+  return clean({ ...(saved ? JSON.parse(saved) : {}), ...(petName ? { petName } : {}) })
+}
 
 function load(): Profile {
+  if (!storageKey) return DEFAULT_PROFILE
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (!saved) return DEFAULT_PROFILE
-    const parsed = JSON.parse(saved) as Partial<Profile> & { limitTonnes?: number }
-    // Profiles saved before the limit went monthly stored a yearly figure in tonnes
-    if (parsed.monthlyLimitKg === undefined && parsed.limitTonnes !== undefined) {
-      parsed.monthlyLimitKg = Math.round((parsed.limitTonnes * 1000) / 12)
-    }
-    delete parsed.limitTonnes
-    if (parsed.monthlyLimitKg !== undefined) {
-      parsed.monthlyLimitKg = Math.min(
-        Math.max(parsed.monthlyLimitKg, MIN_MONTHLY_LIMIT_KG),
-        MAX_MONTHLY_LIMIT_KG,
-      )
-    }
-    return { ...DEFAULT_PROFILE, ...parsed }
+    const saved = localStorage.getItem(storageKey)
+    if (saved) return clean(JSON.parse(saved))
+    const legacy = readLegacy()
+    if (legacy) localStorage.setItem(storageKey, JSON.stringify(legacy))
+    return legacy ?? DEFAULT_PROFILE
   } catch {
     return DEFAULT_PROFILE
   }
@@ -67,14 +113,59 @@ export function getProfile() {
 }
 const listeners = new Set<() => void>()
 
-export function updateProfile(changes: Partial<Profile>) {
-  profile = { ...profile, ...changes }
+function save(next: Profile) {
+  profile = next
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
+    if (storageKey) localStorage.setItem(storageKey, JSON.stringify(profile))
   } catch {
     // Storage can be blocked (private windows); the profile still works for this visit
   }
   listeners.forEach((l) => l())
+}
+
+export function setProfileUser(nextUserId: string | null) {
+  const nextKey = nextUserId ? `profile:${nextUserId}` : null
+  if (storageKey === nextKey) return
+  userId = nextUserId
+  storageKey = nextKey
+  profile = load()
+  listeners.forEach((l) => l())
+  fetchSoon(pull)
+}
+
+// The account's saved profile wins; an account with none yet saves this browser's
+async function pull() {
+  const cloud = cloudFor(userId)
+  if (!cloud) return
+  const key = storageKey
+  try {
+    const { data, error } = await cloud.from('profiles').select('*').maybeSingle()
+    if (error) throw error
+    if (storageKey !== key) return
+    if (!data) {
+      if (profile !== DEFAULT_PROFILE) pushChange(userId, (c) => c.from('profiles').upsert(toRow(profile)))
+      return
+    }
+    const row = data as ProfileRow
+    save(clean({
+      ...profile,
+      name: row.name,
+      household: row.household,
+      diet: row.diet,
+      monthlyLimitKg: row.monthly_limit_kg,
+      petName: row.pet_name,
+    }))
+  } catch (error) {
+    reportSyncError(error)
+  }
+}
+
+export function updateProfile(changes: Partial<Profile>) {
+  save({ ...profile, ...changes })
+  const saved = profile
+  pushChange(userId, (cloud) =>
+    cloud.from('profiles').upsert({ ...toRow(saved), updated_at: new Date().toISOString() }),
+  )
 }
 
 // "sam.jones@…" → "Sam", for people who log in without registering a name

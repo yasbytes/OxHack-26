@@ -1,4 +1,3 @@
-import { loadPetName } from '../pet.ts'
 import { buyItem, feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
 import {
   BASE_MAX_COINS_PER_DAY,
@@ -11,8 +10,7 @@ import { useProfile } from '../profileStore.ts'
 function ShopPage() {
   const { coins, owned } = useShop()
   const { fed, hoursLeft } = useFed()
-  const petName = loadPetName()
-  const { monthlyLimitKg } = useProfile()
+  const { petName, monthlyLimitKg } = useProfile()
   const budget = Math.round(dailyBudgetKg(monthlyLimitKg))
   const multiplier = rewardMultiplier(monthlyLimitKg)
 

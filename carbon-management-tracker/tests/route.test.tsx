@@ -67,12 +67,52 @@ it('explains when a place can\'t be found', async () => {
 it('fills in the distance from the form', async () => {
   fakeMaps()
   render(<LogPanel />)
-  fireEvent.change(screen.getByLabelText('From (optional)'), { target: { value: 'Oxford station' } })
-  fireEvent.change(screen.getByLabelText('To (optional)'), { target: { value: 'London Paddington' } })
+  fireEvent.change(screen.getByLabelText('From'), { target: { value: 'Oxford station' } })
+  fireEvent.change(screen.getByLabelText('To'), { target: { value: 'London Paddington' } })
   fireEvent.click(screen.getByRole('button', { name: 'Find' }))
   await screen.findByText('Oxford → London Paddington, by road. One way.')
-  expect((screen.getByLabelText('Distance') as HTMLInputElement).value).toBe('95.1')
+  expect((screen.getByLabelText('Or distance') as HTMLInputElement).value).toBe('95.1')
   // Switching to miles converts the found distance
   fireEvent.change(screen.getByLabelText('Distance unit'), { target: { value: 'mi' } })
-  expect((screen.getByLabelText('Distance') as HTMLInputElement).value).toBe('59.1')
+  expect((screen.getByLabelText('Or distance') as HTMLInputElement).value).toBe('59.1')
 }, 10_000)
+
+it('works the distance out when calculating, without pressing Find', async () => {
+  fakeMaps()
+  render(<LogPanel />)
+  fireEvent.click(screen.getByRole('radio', { name: 'Train' }))
+  fireEvent.change(screen.getByLabelText('From'), { target: { value: 'Oxford station' } })
+  fireEvent.change(screen.getByLabelText('To'), { target: { value: 'London Paddington' } })
+  fireEvent.click(screen.getByRole('button', { name: 'calculate!' }))
+  await screen.findByText(/Oxford → London Paddington, by rail estimate/)
+  const { showToast } = await import('../src/toast')
+  // About 85 km of straight line, plus 20% for the track: roughly 3.6 kg by train
+  await vi.waitFor(() => expect(showToast).toHaveBeenCalledWith(expect.stringMatching(/^Saved · 3\.\d kg/)))
+}, 10_000)
+
+it('looks again when a place changes after a lookup', async () => {
+  fakeMaps()
+  render(<LogPanel />)
+  fireEvent.change(screen.getByLabelText('From'), { target: { value: 'Oxford station' } })
+  fireEvent.change(screen.getByLabelText('To'), { target: { value: 'London Paddington' } })
+  fireEvent.blur(screen.getByLabelText('To'))
+  await screen.findByText('Oxford → London Paddington, by road. One way.')
+  fireEvent.change(screen.getByLabelText('To'), { target: { value: 'Heathrow' } })
+  expect((screen.getByLabelText('Or distance') as HTMLInputElement).value).toBe('')
+}, 10_000)
+
+it('saves in one click when leaving the To box starts the lookup', async () => {
+  fakeMaps()
+  const { showToast } = await import('../src/toast')
+  vi.mocked(showToast).mockClear()
+  render(<LogPanel />)
+  fireEvent.change(screen.getByLabelText('From'), { target: { value: 'Oxford station' } })
+  fireEvent.change(screen.getByLabelText('To'), { target: { value: 'London Paddington' } })
+  // Clicking calculate moves focus off the To box first, then the click lands
+  fireEvent.blur(screen.getByLabelText('To'))
+  fireEvent.click(screen.getByRole('button', { name: 'finding…' }))
+  // 95.1 km by electric car
+  await vi.waitFor(() => expect(showToast).toHaveBeenCalledWith('Saved · 2.5 kg CO₂e'))
+  expect(showToast).toHaveBeenCalledTimes(1)
+}, 10_000)
+

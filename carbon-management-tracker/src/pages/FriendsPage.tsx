@@ -1,7 +1,14 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog.tsx'
 import { useFootprint } from '../footprint.ts'
-import { addFriend, removeFriend, useFriends, type Friend } from '../friendsStore.ts'
+import {
+  refreshFriends,
+  removeFriend,
+  respondToRequest,
+  sendFriendRequest,
+  useFriends,
+  type Friend,
+} from '../friendsStore.ts'
 import { moodFor } from '../pet.ts'
 import { useLimits, useProfile } from '../profileStore.ts'
 
@@ -16,25 +23,32 @@ type Row = {
 }
 
 function FriendsPage() {
-  const friends = useFriends()
+  const { status, friends, requests } = useFriends()
   const profile = useProfile()
   const { weekKg, yearTonnes } = useFootprint()
   const { limitTonnes, weeklyBudgetKg } = useLimits()
 
-  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
   const [toRemove, setToRemove] = useState<Friend | null>(null)
 
-  function handleAdd(e: FormEvent) {
+  // Friends' totals change as they log, so fetch them fresh on each visit
+  useEffect(() => {
+    void refreshFriends()
+  }, [])
+
+  async function handleAdd(e: FormEvent) {
     e.preventDefault()
-    // TODO: send a friend request through the backend once accounts exist
-    if (addFriend(name.trim())) {
-      setName('')
-      setError('')
-    } else {
-      setError(`${name.trim()} is already your friend.`)
-    }
+    setSending(true)
+    const failure = await sendFriendRequest(email.trim())
+    setSending(false)
+    setError(failure ?? '')
+    if (!failure) setEmail('')
   }
+
+  const incoming = requests.filter((r) => r.direction === 'incoming')
+  const outgoing = requests.filter((r) => r.direction === 'outgoing')
 
   // Ranked by how this week compares with each person's own budget, so people
   // with different limits are compared fairly; lowest first
@@ -67,30 +81,84 @@ function FriendsPage() {
 
       <section className="card friends__card">
         <h2 className="card__title">Add a friend</h2>
-        <form className="friends__form" onSubmit={handleAdd}>
-          <label className="field">
-            <span className="field__label">Friend's name</span>
-            <input
-              className="field__input"
-              required
-              placeholder="e.g. Alex"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value)
-                setError('')
-              }}
-            />
-          </label>
-          <button type="submit" className="calculate">
-            add friend
-          </button>
-        </form>
+        {status === 'local' ? (
+          <p className="friends__empty">
+            Friends are other accounts, so they need Supabase sign-in. Demo accounts only live in
+            this browser.
+          </p>
+        ) : (
+          <form className="friends__form" onSubmit={handleAdd}>
+            <label className="field">
+              <span className="field__label">Their account email</span>
+              <input
+                className="field__input"
+                type="email"
+                required
+                placeholder="e.g. alex@example.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setError('')
+                }}
+              />
+            </label>
+            <button type="submit" className="calculate" disabled={sending}>
+              {sending ? 'sending…' : 'send request'}
+            </button>
+          </form>
+        )}
         {error && (
           <p className="friends__error" role="alert">
             {error}
           </p>
         )}
       </section>
+
+      {requests.length > 0 && (
+        <section className="card friends__card">
+          <h2 className="card__title">Friend requests</h2>
+          <ul className="friends__list">
+            {incoming.map((r) => (
+              <li key={r.id} className="friends__row">
+                <div className="friends__info">
+                  <span className="friends__name">{r.name}</span>
+                  <span className="friends__mood">wants to compare footprints</span>
+                </div>
+                <button
+                  type="button"
+                  className="history__link"
+                  onClick={() => void respondToRequest(r, true)}
+                >
+                  Accept
+                </button>
+                <button
+                  type="button"
+                  className="history__link history__link--delete"
+                  onClick={() => void respondToRequest(r, false)}
+                >
+                  Decline
+                </button>
+              </li>
+            ))}
+            {outgoing.map((r) => (
+              <li key={r.id} className="friends__row">
+                <div className="friends__info">
+                  <span className="friends__name">{r.name}</span>
+                  <span className="friends__mood">hasn't accepted yet</span>
+                </div>
+                <button
+                  type="button"
+                  className="history__link history__link--delete"
+                  aria-label={`Cancel request to ${r.name}`}
+                  onClick={() => void removeFriend(r)}
+                >
+                  Cancel
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="card friends__card">
         <h2 className="card__title">This week's leaderboard</h2>
@@ -148,18 +216,25 @@ function FriendsPage() {
             )
           })}
         </ol>
-        {friends.length === 0 && (
-          <p className="friends__empty">Add a friend above to compare footprints.</p>
+        {status === 'error' && (
+          <p className="friends__error" role="alert">
+            Couldn't load your friends. Check your connection and come back to this page.
+          </p>
+        )}
+        {status !== 'error' && friends.length === 0 && (
+          <p className="friends__empty">
+            {status === 'loading' ? 'Loading friends…' : 'Add a friend above to compare footprints.'}
+          </p>
         )}
       </section>
 
       {toRemove && (
         <ConfirmDialog
           title={`Remove ${toRemove.name}?`}
-          message="They'll disappear from your leaderboard. You can add them again later."
+          message="You'll both disappear from each other's leaderboard. You can send a new request later."
           confirmLabel="Remove"
           onConfirm={() => {
-            removeFriend(toRemove.id)
+            void removeFriend(toRemove)
             setToRemove(null)
           }}
           onCancel={() => setToRemove(null)}

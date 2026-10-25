@@ -3,7 +3,6 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx'
 import Signout from '../components/Signout.tsx'
 import { useAuth } from '../context/AuthContext'
 import { clearLog } from '../logStore.ts'
-import { PET_NAME_KEY } from '../pet.ts'
 import {
   DIETS,
   nameFromEmail,
@@ -50,16 +49,12 @@ function ProfilePage() {
     showToast('Profile saved')
   }
 
-  function resetDemo() {
+  function resetData() {
     clearLog()
     resetShop()
-    try {
-      localStorage.removeItem(PET_NAME_KEY)
-    } catch {
-      // Nothing saved to remove
-    }
+    updateProfile({ petName: '' })
     setConfirmReset(false)
-    showToast('Demo data cleared')
+    showToast('Your data was cleared')
   }
 
   return (
@@ -104,6 +99,7 @@ function ProfilePage() {
                 className="field__input"
                 type="number"
                 min="1"
+                max="20"
                 step="1"
                 required
                 value={household}
@@ -188,7 +184,7 @@ function ProfilePage() {
             className="profile__button profile__button--danger"
             onClick={() => setConfirmReset(true)}
           >
-            Reset demo data
+            Reset my data
           </button>
         </div>
         <p className="field__hint profile__hint">
@@ -198,10 +194,10 @@ function ProfilePage() {
 
       {confirmReset && (
         <ConfirmDialog
-          title="Reset demo data?"
+          title="Reset your data?"
           message="This deletes everything in your History, your coins and food, and your cat's name. This can't be undone."
           confirmLabel="Reset"
-          onConfirm={resetDemo}
+          onConfirm={resetData}
           onCancel={() => setConfirmReset(false)}
         />
       )}

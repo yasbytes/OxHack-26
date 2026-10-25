@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { fedMood, loadPetName, moodFor, PET_NAME_KEY } from '../pet.ts'
+import { fedMood, moodFor } from '../pet.ts'
+import { updateProfile, useProfile } from '../profileStore.ts'
 import { feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
 
 const MAX_NAME_LENGTH = 20
@@ -15,7 +16,7 @@ function PetCard({ weekKg, budgetKg }: Props) {
   const { fed, hoursLeft } = useFed()
   const mood = fedMood(moodFor(weekKg, budgetKg), fed)
   const food = SHOP_ITEMS.filter((item) => owned[item.id] > 0)
-  const [name, setName] = useState(loadPetName)
+  const { petName: name } = useProfile()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
 
@@ -29,13 +30,8 @@ function PetCard({ weekKg, budgetKg }: Props) {
   function saveName(e: FormEvent) {
     e.preventDefault()
     const next = draft.trim()
-    setName(next)
     setEditing(false)
-    try {
-      localStorage.setItem(PET_NAME_KEY, next)
-    } catch {
-      // Storage can be blocked; the name still applies for this visit
-    }
+    updateProfile({ petName: next })
   }
 
   return (
