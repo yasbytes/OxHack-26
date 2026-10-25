@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import LogPanel from '../components/LogPanel.tsx'
 import PetCard from '../components/PetCard.tsx'
+import AskAI from '../components/AskAI.tsx'
 import { addLogItem } from '../logStore.ts'
 import { useLimits, useProfile } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
@@ -40,7 +41,6 @@ function HomePage() {
     })
     setQuickLog('')
   }
-
 
   return (
     <main className="main">
@@ -98,10 +98,12 @@ function HomePage() {
         </section>
         <div className="card quick-log__submit-card">
           <button type="submit" className="quick-log__submit">
-            calculate journey
+            log it
           </button>
         </div>
       </form>
+
+      <AskAI />
 
       <LogPanel />
     </main>
@@ -109,6 +111,3 @@ function HomePage() {
 }
 
 export default HomePage
-
-// styling - Tailwind
-// data fetching - TanStack Query (React Query)
