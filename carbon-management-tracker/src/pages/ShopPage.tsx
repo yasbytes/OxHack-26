@@ -1,10 +1,20 @@
 import { loadPetName } from '../pet.ts'
-import { buyItem, feedItem, LOG_REWARD, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
+import { buyItem, feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
+import {
+  BASE_MAX_COINS_PER_DAY,
+  BASE_MONTH_BONUS,
+  dailyBudgetKg,
+  rewardMultiplier,
+} from '../coins.ts'
+import { useProfile } from '../profileStore.ts'
 
 function ShopPage() {
   const { coins, owned } = useShop()
   const { fed, hoursLeft } = useFed()
   const petName = loadPetName()
+  const { monthlyLimitKg } = useProfile()
+  const budget = Math.round(dailyBudgetKg(monthlyLimitKg))
+  const multiplier = rewardMultiplier(monthlyLimitKg)
 
   return (
     <main className="main">
@@ -19,8 +29,9 @@ function ShopPage() {
       <section className="card shop__card">
         <h2 className="card__title">Treat your cat</h2>
         <p className="chart-card__sub">
-          Earn {LOG_REWARD} coins for every activity you log. Food cheers your cat up by one mood
-          for a while.
+          Each day you log and stay under {budget} kg earns up to {Math.round(BASE_MAX_COINS_PER_DAY * multiplier)}{' '}
+          coins, the more you save the more you get. A month under your limit, logged on most days,
+          adds a {Math.round(BASE_MONTH_BONUS * multiplier)}-coin bonus. Coins for a day arrive the next morning.
           {fed && ` ${petName || 'Your cat'} is well fed for ${hoursLeft} more ${hoursLeft === 1 ? 'hour' : 'hours'}.`}
         </p>
 

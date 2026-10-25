@@ -1,10 +1,13 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { showToast } from './toast.ts'
+import { coinsEarned, START_COINS } from './coins.ts'
+import { getLogItems, useLog } from './logStore.ts'
+import { getProfile, useProfile } from './profileStore.ts'
 import foodBowl from './assets/shop/food-bowl.png'
 import catTreats from './assets/shop/cat-treats.png'
 
-// Front end only: coins and food live in this browser, one wallet per account,
-// until the backend keeps them
+// Front end only: spending and food live in this browser, one wallet per account,
+// until the backend keeps them. Coins earned come from the log (coins.ts).
 
 export const SHOP_ITEMS = [
   {
@@ -27,19 +30,17 @@ export const SHOP_ITEMS = [
 export type ShopItem = (typeof SHOP_ITEMS)[number]
 export type ShopItemId = ShopItem['id']
 
-// Every activity logged earns this many coins
-export const LOG_REWARD = 10
-const START_COINS = 120
 const HOUR_MS = 3_600_000
 
 export type ShopState = {
-  coins: number
+  // Total spent in the shop; the balance is what's been earned minus this
+  spent: number
   owned: Record<ShopItemId, number>
   // When the last meal stops cheering the cat up (ms since 1970)
   fedUntil: number
 }
 
-const EMPTY: ShopState = { coins: START_COINS, owned: { treats: 0, bowl: 0 }, fedUntil: 0 }
+const EMPTY: ShopState = { spent: 0, owned: { treats: 0, bowl: 0 }, fedUntil: 0 }
 
 let storageKey: string | null = null
 
@@ -48,8 +49,9 @@ function load(): ShopState {
   try {
     const saved = localStorage.getItem(storageKey)
     if (!saved) return EMPTY
-    const parsed = JSON.parse(saved) as Partial<ShopState>
-    return { ...EMPTY, ...parsed, owned: { ...EMPTY.owned, ...parsed.owned } }
+    // Wallets saved before coins came from the log kept a balance instead; start those afresh
+    const { spent, owned, fedUntil } = JSON.parse(saved) as Partial<ShopState>
+    return { spent: spent ?? 0, owned: { ...EMPTY.owned, ...owned }, fedUntil: fedUntil ?? 0 }
   } catch {
     return EMPTY
   }
@@ -76,18 +78,19 @@ function save(next: ShopState) {
   listeners.forEach((l) => l())
 }
 
-export function earnCoins(amount: number) {
-  save({ ...state, coins: state.coins + amount })
+function balance(earned: number, spent: number) {
+  return START_COINS + earned - spent
 }
 
 export function buyItem(item: ShopItem) {
-  if (state.coins < item.price) {
-    showToast(`You need ${item.price - state.coins} more coins`)
+  const coins = balance(coinsEarned(getLogItems(), getProfile().monthlyLimitKg), state.spent)
+  if (coins < item.price) {
+    showToast(`You need ${item.price - coins} more coins`)
     return
   }
   save({
     ...state,
-    coins: state.coins - item.price,
+    spent: state.spent + item.price,
     owned: { ...state.owned, [item.id]: state.owned[item.id] + 1 },
   })
   showToast(`Bought ${item.name.toLowerCase()} · −${item.price} coins`)
@@ -111,7 +114,11 @@ function subscribe(listener: () => void) {
 }
 
 export function useShop() {
-  return useSyncExternalStore(subscribe, () => state)
+  const shop = useSyncExternalStore(subscribe, () => state)
+  const log = useLog()
+  const { monthlyLimitKg } = useProfile()
+  const earned = useMemo(() => coinsEarned(log, monthlyLimitKg), [log, monthlyLimitKg])
+  return { ...shop, coins: balance(earned, shop.spent) }
 }
 
 // Whether the cat is still enjoying its last meal, checked again every minute

@@ -1862,6 +1862,60 @@
   grid-area: 2 / 2;
 }
 
+/* Start and destination on top, then distance and date, then the description */
+.travel__fields--route .field--distance {
+  grid-area: 2 / 1;
+}
+
+.travel__fields--route .field--date {
+  grid-area: 2 / 2;
+}
+
+.travel__fields--route .field--description {
+  grid-area: 3 / 1 / 4 / 3;
+}
+
+/* Cars also pick a fuel, so it sits beside the distance and pushes the date down */
+.travel__fields--car .field--fuel {
+  grid-area: 2 / 1;
+}
+
+.travel__fields--car .field--distance {
+  grid-area: 2 / 2;
+}
+
+.travel__fields--car .field--date {
+  grid-area: 3 / 1;
+}
+
+.travel__fields--car .field--description {
+  grid-area: 3 / 2;
+}
+
+.distance__find {
+  flex: none;
+  height: 47.2px;
+  padding: 0 16px;
+  background: var(--btn-primary);
+  border: 1px solid var(--btn-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.distance__find:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.distance__find:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
 .field__label {
   padding-left: 0;
   font-size: 18.8px;
@@ -2027,6 +2081,14 @@
 
   .travel__fields .result {
     grid-area: 4 / 1 / 5 / 3;
+  }
+
+  .travel__fields--route .calculate {
+    grid-area: 4 / 1 / 5 / 3;
+  }
+
+  .travel__fields--route .result {
+    grid-area: 5 / 1 / 6 / 3;
   }
 }
 
@@ -2325,7 +2387,16 @@
   .field--date,
   .field--description,
   .calculate,
-  .travel__fields .result {
+  .travel__fields .result,
+  .travel__fields--route .field--distance,
+  .travel__fields--route .field--date,
+  .travel__fields--route .field--description,
+  .travel__fields--route .calculate,
+  .travel__fields--route .result,
+  .travel__fields--car .field--fuel,
+  .travel__fields--car .field--distance,
+  .travel__fields--car .field--date,
+  .travel__fields--car .field--description {
     grid-area: auto;
   }
 }

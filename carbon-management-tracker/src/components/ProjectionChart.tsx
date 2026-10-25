@@ -11,11 +11,13 @@ type Props = {
   // Last 8 weeks, oldest first, so the recent part of the line has real shape
   weeklyKg: number[]
   limitTonnes: number
+  // kg a day since logging began this year, carried on to 31 December
+  paceKgPerDay: number
 }
 
 // Running total for the year: a steady pace up to 8 weeks ago, the real weekly
 // totals since then, and the current pace carried on to 31 December
-function buildSeries(yearTonnes: number, weeklyKg: number[], today: Date) {
+function buildSeries(yearTonnes: number, weeklyKg: number[], paceKgPerDay: number, today: Date) {
   const start = new Date(today.getFullYear(), 0, 1)
   const daysInYear = Math.round((new Date(today.getFullYear() + 1, 0, 1).getTime() - start.getTime()) / DAY_MS)
   const elapsed = Math.max(1, Math.round((today.getTime() - start.getTime()) / DAY_MS))
@@ -38,11 +40,11 @@ function buildSeries(yearTonnes: number, weeklyKg: number[], today: Date) {
     points.push({ day, tonnes: actualAt(day) / 1000, projected: false })
   }
   points.push({ day: elapsed, tonnes: yearTonnes, projected: false })
-  const perDay = yearKg / elapsed
+  const projectedAt = (day: number) => (yearKg + paceKgPerDay * (day - elapsed)) / 1000
   for (let day = elapsed + 7; day < daysInYear; day += 7) {
-    points.push({ day, tonnes: (perDay * day) / 1000, projected: true })
+    points.push({ day, tonnes: projectedAt(day), projected: true })
   }
-  points.push({ day: daysInYear, tonnes: (perDay * daysInYear) / 1000, projected: true })
+  points.push({ day: daysInYear, tonnes: projectedAt(daysInYear), projected: true })
 
   return { points, start, daysInYear, elapsed }
 }
@@ -51,7 +53,7 @@ function dateFor(start: Date, day: number) {
   return new Date(start.getTime() + day * DAY_MS)
 }
 
-function ProjectionChart({ yearTonnes, weeklyKg, limitTonnes }: Props) {
+function ProjectionChart({ yearTonnes, weeklyKg, limitTonnes, paceKgPerDay }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(600)
   const [active, setActive] = useState<Point | null>(null)
@@ -70,7 +72,7 @@ function ProjectionChart({ yearTonnes, weeklyKg, limitTonnes }: Props) {
     d.setHours(0, 0, 0, 0)
     return d
   })
-  const { points, start, daysInYear, elapsed } = buildSeries(yearTonnes, weeklyKg, today)
+  const { points, start, daysInYear, elapsed } = buildSeries(yearTonnes, weeklyKg, paceKgPerDay, today)
   const yearEnd = points[points.length - 1].tonnes
   const overLimit = yearEnd > limitTonnes
 

@@ -15,19 +15,25 @@ export type Profile = {
   email: string
   household: number
   diet: Diet
-  // The monthly footprint the user has to stay under (UK average is about 830 kg)
+  // The monthly footprint from travel, home energy and food the user has to stay under
   monthlyLimitKg: number
 }
 
-// About 10 t a year; a limit above the average wouldn't ask anything of anyone
-export const UK_AVERAGE_MONTHLY_KG = 830
+// The average UK person's travel, home energy and food, the parts this app
+// tracks: about 5,480 kg a year (Defra 2023, ANNUAL_BASE_KG in backend/app/factors.py).
+// The whole UK footprint is about 10 t, but most of it is shopping and services.
+export const UK_AVERAGE_MONTHLY_KG = 456
+// Everyone aims at least 20% below average, and at most 90% below (MIN_REDUCTION
+// and MAX_REDUCTION in factors.py)
+export const MAX_MONTHLY_LIMIT_KG = Math.round(UK_AVERAGE_MONTHLY_KG * 0.8)
+export const MIN_MONTHLY_LIMIT_KG = Math.round(UK_AVERAGE_MONTHLY_KG * 0.1)
 
 const DEFAULT_PROFILE: Profile = {
   name: '',
   email: '',
   household: 1,
   diet: 'meat',
-  monthlyLimitKg: 500,
+  monthlyLimitKg: MAX_MONTHLY_LIMIT_KG,
 }
 
 const STORAGE_KEY = 'profile'
@@ -43,7 +49,10 @@ function load(): Profile {
     }
     delete parsed.limitTonnes
     if (parsed.monthlyLimitKg !== undefined) {
-      parsed.monthlyLimitKg = Math.min(parsed.monthlyLimitKg, UK_AVERAGE_MONTHLY_KG)
+      parsed.monthlyLimitKg = Math.min(
+        Math.max(parsed.monthlyLimitKg, MIN_MONTHLY_LIMIT_KG),
+        MAX_MONTHLY_LIMIT_KG,
+      )
     }
     return { ...DEFAULT_PROFILE, ...parsed }
   } catch {
@@ -52,6 +61,10 @@ function load(): Profile {
 }
 
 let profile = load()
+
+export function getProfile() {
+  return profile
+}
 const listeners = new Set<() => void>()
 
 export function updateProfile(changes: Partial<Profile>) {

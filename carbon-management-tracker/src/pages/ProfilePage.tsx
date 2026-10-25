@@ -7,6 +7,8 @@ import { PET_NAME_KEY } from '../pet.ts'
 import {
   DIETS,
   nameFromEmail,
+  MAX_MONTHLY_LIMIT_KG,
+  MIN_MONTHLY_LIMIT_KG,
   UK_AVERAGE_MONTHLY_KG,
   updateProfile,
   useProfile,
@@ -16,8 +18,8 @@ import { resetShop } from '../shopStore.ts'
 import { showToast } from '../toast.ts'
 
 const LIMIT_PRESETS = [
-  { kg: 500, label: 'Our default' },
-  { kg: UK_AVERAGE_MONTHLY_KG, label: 'UK average' },
+  { kg: MAX_MONTHLY_LIMIT_KG, label: '20% below average' },
+  { kg: Math.round(UK_AVERAGE_MONTHLY_KG / 2), label: 'Half the average' },
 ]
 
 function ProfilePage() {
@@ -142,16 +144,17 @@ function ProfilePage() {
               <input
                 className="field__input"
                 type="number"
-                min="50"
-                max={UK_AVERAGE_MONTHLY_KG}
-                step="10"
+                min={MIN_MONTHLY_LIMIT_KG}
+                max={MAX_MONTHLY_LIMIT_KG}
+                step="1"
                 required
                 value={limit}
                 onChange={(e) => setLimit(e.target.value)}
               />
               <span className="field__hint">
-                About {weeklyKg} kg a week. Can't be more than the UK average (
-                {UK_AVERAGE_MONTHLY_KG} kg).
+                About {weeklyKg} kg a week. The UK average for travel, home and food is{' '}
+                {UK_AVERAGE_MONTHLY_KG} kg, so the most you can set is {MAX_MONTHLY_LIMIT_KG} kg (20%
+                below).
               </span>
             </label>
             <div className="profile__presets">

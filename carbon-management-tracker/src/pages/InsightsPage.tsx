@@ -1,12 +1,12 @@
 import { useLog } from '../logStore.ts'
-import { CATEGORY_KG } from '../sampleData.ts'
 import { useLimits } from '../profileStore.ts'
-import { useFootprint } from '../footprint.ts'
+import { useFootprint, type CategoryId } from '../footprint.ts'
+import { localDate } from '../dates.ts'
 import ProjectionChart from '../components/ProjectionChart.tsx'
 
-type CategoryKg = { id: (typeof CATEGORY_KG)[number]['id']; label: string; kg: number }[]
+type CategoryKg = { id: CategoryId; label: string; kg: number }[]
 
-const TIPS: Record<(typeof CATEGORY_KG)[number]['id'], string> = {
+const TIPS: Record<CategoryId, string> = {
   travel:
     'Travel is your biggest source. Swapping one regular car trip a week for the bus, train or a bike makes the biggest dent.',
   energy:
@@ -14,25 +14,20 @@ const TIPS: Record<(typeof CATEGORY_KG)[number]['id'], string> = {
   food: 'Food is your biggest source. Swapping beef or lamb for chicken, beans or tofu a few times a week makes a big difference.',
 }
 
-const DAY_MS = 86_400_000
-
-// As YYYY-MM-DD, to compare with log entry dates
+// As YYYY-MM-DD in local time, to compare with log entry dates
 function daysAgo(days: number) {
-  return new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10)
-}
-
-// Straight-line estimate: this year's total so far, scaled to a full year
-function projectYear(yearTonnes: number) {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), 0, 1)
-  const end = new Date(now.getFullYear() + 1, 0, 1)
-  const elapsed = (now.getTime() - start.getTime()) / (end.getTime() - start.getTime())
-  return yearTonnes / elapsed
+  const date = new Date()
+  date.setDate(date.getDate() - days)
+  return localDate(date)
 }
 
 function Breakdown({ categoryKg }: { categoryKg: CategoryKg }) {
   const total = categoryKg.reduce((sum, c) => sum + c.kg, 0)
   const max = Math.max(...categoryKg.map((c) => c.kg))
+
+  if (total === 0) {
+    return <p className="chart-card__sub">Nothing logged in the last 4 weeks yet.</p>
+  }
 
   return (
     <>
@@ -79,13 +74,14 @@ function InsightsPage() {
   const weekAgo = daysAgo(7)
   const loggedThisWeek = log.filter((i) => i.date > weekAgo).length
 
-  const { yearTonnes, weekKg, weeklyKg, categoryKg } = useFootprint()
+  const { yearTonnes, projectedTonnes: projected, paceKgPerDay, weekKg, weeklyKg, categoryKg } =
+    useFootprint()
   const { limitTonnes, weeklyBudgetKg } = useLimits()
   const week = Math.round(weekKg)
-  const projected = projectYear(yearTonnes)
   const projectedOver = projected > limitTonnes
   const weekOver = week > weeklyBudgetKg
   const biggest = categoryKg.reduce((a, b) => (b.kg > a.kg ? b : a))
+  const hasRecent = biggest.kg > 0
 
   return (
     <main className="main">
@@ -127,7 +123,12 @@ function InsightsPage() {
       <section className="card chart-card">
         <h2 className="card__title">Year projection</h2>
         <p className="chart-card__sub">Running total of t CO₂e this year, and where you're heading</p>
-        <ProjectionChart yearTonnes={yearTonnes} weeklyKg={weeklyKg} limitTonnes={limitTonnes} />
+        <ProjectionChart
+          yearTonnes={yearTonnes}
+          weeklyKg={weeklyKg}
+          limitTonnes={limitTonnes}
+          paceKgPerDay={paceKgPerDay}
+        />
       </section>
 
       <div className="insights__row">
@@ -139,7 +140,11 @@ function InsightsPage() {
 
         <section className="card chart-card insights__tip">
           <h2 className="card__title">Biggest win</h2>
-          <p className="insights__tip-text">{TIPS[biggest.id]}</p>
+          <p className="insights__tip-text">
+            {hasRecent
+              ? TIPS[biggest.id]
+              : 'Log a few journeys, meals and bills and your biggest source will show up here.'}
+          </p>
         </section>
       </div>
     </main>

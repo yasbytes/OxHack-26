@@ -76,7 +76,13 @@ GBP_PER_KWH = {             # VERIFY: tariffs change, used only to turn a £ bil
     "lpg": 0.09,
 }
 M3_GAS_TO_KWH = 11.2        # VERIFY
-LITRE_LIQUID_TO_KWH = 10.3  # oil and LPG, rough. VERIFY
+LITRE_TO_KWH = {            # LPG holds much less energy per litre than oil. VERIFY
+    "oil": 10.3,            # DESNZ burning oil: ~2.54 kg per litre / 0.247 kg per kWh
+    "lpg": 7.1,             # DESNZ LPG: ~1.56 kg per litre / 0.214 kg per kWh
+}
+# A £ bill includes a daily standing charge that isn't energy used. VERIFY against
+# the current Ofgem price cap. Oil and LPG are bought by the delivery, so none.
+STANDING_GBP_PER_DAY = {"electricity": 0.53, "gas": 0.32, "oil": 0.0, "lpg": 0.0}
 
 PERIOD_DAYS = {"week": 7, "month": 30, "quarter": 91, "year": 365}
 
@@ -135,7 +141,7 @@ FOOD_KG_PER_SERVING = {
     "lamb": 5.4,
     "other_meat": 1.8,
     "fish": 2.1,
-    "vegetarian": 1.8,
+    "vegetarian": 1.2,      # ASSUMPTION: between vegan and meat because of dairy and eggs
     "vegan": 0.7,
     "not_sure": 2.5,
 }

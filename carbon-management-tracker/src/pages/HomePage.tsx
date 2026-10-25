@@ -6,6 +6,7 @@ import { addLogItem } from '../logStore.ts'
 import { useLimits, useProfile } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
 import WeatherBadge from '../components/WeatherBadge.tsx'
+import { localDate } from '../dates.ts'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -33,7 +34,7 @@ function HomePage() {
     console.log('quick log', quickLog)
     addLogItem({
       kind: 'quick',
-      date: new Date().toISOString().slice(0, 10),
+      date: localDate(),
       title: quickLog,
       detail: '',
       // Free text needs Gemini to read it, so there's no estimate yet

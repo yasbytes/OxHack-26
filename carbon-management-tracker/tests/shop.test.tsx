@@ -4,6 +4,7 @@ vi.mock('../src/toast', () => ({ showToast: vi.fn() }))
 import { addLogItem, setLogUser } from '../src/logStore'
 import { buyItem, feedItem, setShopUser, SHOP_ITEMS, useFed, useShop } from '../src/shopStore'
 import { fedMood, MOODS } from '../src/pet'
+import { localDate } from '../src/dates'
 
 const [treats, bowl] = SHOP_ITEMS
 
@@ -29,14 +30,21 @@ it("won't spend coins you don't have", () => {
   expect(result.current.coins).toBe(0)
 })
 
-it('earns coins for logging and keeps a wallet per account', () => {
+it('earns coins for finished days under budget and keeps a wallet per account', () => {
   const { result } = renderHook(useShop)
-  act(() => addLogItem({ kind: 'travel', date: '2026-10-24', title: 'Bike', detail: '', kg: 0 }))
-  expect(result.current.coins).toBe(130)
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  act(() => addLogItem({ kind: 'travel', date: localDate(yesterday), title: 'Bike', detail: '', kg: 0 }))
+  expect(result.current.coins).toBe(150)
+  // Today's entries wait until the day is over
+  act(() => addLogItem({ kind: 'travel', date: localDate(), title: 'Walk', detail: '', kg: 0 }))
+  expect(result.current.coins).toBe(150)
   act(() => setShopUser('bob'))
+  act(() => setLogUser('bob'))
   expect(result.current.coins).toBe(120)
   act(() => setShopUser('alice'))
-  expect(result.current.coins).toBe(130)
+  act(() => setLogUser('alice'))
+  expect(result.current.coins).toBe(150)
 })
 
 it('a meal lifts the mood one level, but not past thriving', () => {

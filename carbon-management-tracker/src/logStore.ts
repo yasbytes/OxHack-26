@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react'
 import { showToast } from './toast.ts'
-import { earnCoins, LOG_REWARD } from './shopStore.ts'
 
 // Front end only: entries live in this browser until the backend exists
 
@@ -33,6 +32,10 @@ function load(): LogItem[] {
 }
 
 let items = load()
+
+export function getLogItems() {
+  return items
+}
 // The entry just logged this visit, so the log panel can show its result
 let lastAddedId: string | null = null
 const listeners = new Set<() => void>()
@@ -60,11 +63,8 @@ export function addLogItem(item: Omit<LogItem, 'id' | 'loggedAt'>) {
   const id = crypto.randomUUID()
   lastAddedId = id
   save([{ ...item, id, loggedAt: Date.now() }, ...items])
-  earnCoins(LOG_REWARD)
   showToast(
-    item.kg === null
-      ? `Saved to History · +${LOG_REWARD} coins`
-      : `Saved · ${item.kg.toFixed(1)} kg CO₂e · +${LOG_REWARD} coins`,
+    item.kg === null ? 'Saved to History' : `Saved · ${item.kg.toFixed(1)} kg CO₂e`,
   )
 }
 

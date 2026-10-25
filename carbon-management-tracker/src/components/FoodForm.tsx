@@ -3,6 +3,7 @@ import { addLogItem } from '../logStore.ts'
 import LogResult from './LogResult.tsx'
 import { foodKg } from '../estimates.ts'
 import { DIETS, useProfile } from '../profileStore.ts'
+import { localDate } from '../dates.ts'
 
 // Broad categories rather than ingredients, since most people don't know grams
 const CATEGORIES = [
@@ -33,9 +34,6 @@ export type FoodEntry = {
   description: string
 }
 
-function today() {
-  return new Date().toISOString().slice(0, 10)
-}
 
 function FoodForm() {
   const { diet } = useProfile()
@@ -45,7 +43,7 @@ function FoodForm() {
   )
   const [mealType, setMealType] = useState('Dinner')
   const [servings, setServings] = useState('1')
-  const [date, setDate] = useState(today)
+  const [date, setDate] = useState(() => localDate())
   const [description, setDescription] = useState('')
 
   function handleSubmit(e: FormEvent) {
