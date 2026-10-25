@@ -1,0 +1,14 @@
+{
+  "meat": "That's a meaty meal! Maybe try a plant-based one next time?",
+  "other-meat": "Meat on the menu! A plant-based swap could help next time.",
+  "fish": "Fish on the menu? I've logged it. A meat-free meal is another option to try.",
+  "meat-free": "A meat-free meal? My whiskers approve!",
+  "food": "Meal logged! Every entry helps us see the bigger picture.",
+  "walk": "You walked? Paws up for getting there on your own two feet!",
+  "bike": "You cycled? That's the kind of zoomies I like!",
+  "public-transport": "Sharing the ride? Paws up for public transport!",
+  "car": "A car trip? Could walking or public transport work for one next time?",
+  "flight": "That's a flight on the log. For shorter trips, could a train work next time?",
+  "energy": "Energy logged! Small changes at home can add up.",
+  "logged": "Logged! Let's keep an eye on our footprint together."
+}

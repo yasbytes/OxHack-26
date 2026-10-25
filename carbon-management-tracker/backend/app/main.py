@@ -1,11 +1,11 @@
 import os
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from app.db import User, current_user
 from app.projections import monthly_net_worth, compare_years
-from app.ai import ask_gemini, parse_activities
-from app.calculator import log_entry
+from app.ai import ask_gemini
+from app.journey import plan_journey
 
 app = FastAPI()
 
@@ -38,27 +38,20 @@ def compare(user: User = Depends(current_user)):
 
 
 class AskBody(BaseModel):
-    prompt: str = Field(min_length=1, max_length=2000)
-
+    prompt: str
 
 @app.post("/api/ask")
-def ask(body: AskBody, user: User = Depends(current_user)):
+def ask(body: AskBody):
     return {"text": ask_gemini(body.prompt)}
 
 
-class ParseLogBody(BaseModel):
-    text: str = Field(min_length=1, max_length=1000)
+class JourneyBody(BaseModel):
+    question: str
 
-
-@app.post("/api/parse-log")
-def parse_log(body: ParseLogBody, user: User = Depends(current_user)):
-    """
-    Reads a quick log ("cycled 5 km to work, then a beef burger for lunch") into
-    log entries with kg worked out from factors.py. The browser saves them.
-    """
+@app.post("/api/journey")
+def journey(body: JourneyBody):
     try:
-        activities = parse_activities(body.text)
-    except Exception as error:
-        raise HTTPException(502, "Couldn't read that right now") from error
-    entries = [e for e in (log_entry(a) for a in activities) if e]
-    return {"entries": entries}
+        return plan_journey(body.question)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Couldn't plan that journey: {e}")
+

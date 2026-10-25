@@ -46,7 +46,7 @@ export function buildYear(log: LogItem[], now: Date = new Date(), maxWindow = 90
   }
 
   const soFarKg = sum(0, daysElapsed - 1)
-  // Average over the days since the first logged entry (at least 7, at most 90),
+  // Average over the days since the first logged entry (at least 30, at most 90),
   // so a new user isn't diluted by empty days
   const firstIdx = perDay.findIndex((kg) => kg > 0)
   const dataDays = firstIdx === -1 ? daysElapsed : daysElapsed - firstIdx

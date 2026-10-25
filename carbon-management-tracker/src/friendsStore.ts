@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { showToast } from './toast.ts'
-import { cloudFor, fetchSoon, reportSyncError } from './cloud.ts'
+import { cloudFor, fetchSoon, reportSyncError, type Cloud } from './cloud.ts'
 
 // Friends are other accounts. A request is sent by username or email and shared totals only
 // appear once the other person accepts. Each friend's numbers are worked out in
@@ -51,11 +51,45 @@ function set(next: FriendsState) {
   listeners.forEach((l) => l())
 }
 
+let stopWatching = () => {}
+
+// Requests arrive from other accounts, so refetch whenever a friendship row
+// involving this account changes, and again when the tab comes back into view
+function watchFriendships(cloud: Cloud, owner: string) {
+  const channel = cloud
+    .channel(`friendships:${owner}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `addressee=eq.${owner}` }, () => void refreshFriends())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `requester=eq.${owner}` }, () => void refreshFriends())
+    .subscribe()
+  const onVisible = () => { if (document.visibilityState === 'visible') void refreshFriends() }
+  document.addEventListener('visibilitychange', onVisible)
+  return () => {
+    document.removeEventListener('visibilitychange', onVisible)
+    void cloud.removeChannel(channel)
+  }
+}
+
 export function setFriendsUser(nextUserId: string | null) {
   if (userId === nextUserId) return
   userId = nextUserId
-  set(cloudFor(userId) ? { status: 'loading', friends: [], requests: [] } : LOCAL)
-  fetchSoon(refreshFriends)
+  stopWatching()
+  stopWatching = () => {}
+  const cloud = cloudFor(userId)
+  set(cloud ? { status: 'loading', friends: [], requests: [] } : LOCAL)
+  const owner = userId
+  fetchSoon(async () => {
+    // Skipped if the account changed again before this ran
+    if (cloud && owner && userId === owner) {
+      stopWatching()
+      try {
+        stopWatching = watchFriendships(cloud, owner)
+      } catch (error) {
+        // Without live updates the list still refreshes on each visit
+        reportSyncError(error)
+      }
+    }
+    await refreshFriends()
+  })
 }
 
 export async function refreshFriends() {

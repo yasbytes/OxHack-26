@@ -1,21 +1,23 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { fedMood, moodFor } from '../pet.ts'
+import { fedMood, moodFor, type Mood } from '../pet.ts'
 import { updateProfile, useProfile } from '../profileStore.ts'
 import { feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
+import { useLastAdded } from '../logStore.ts'
+import { reactionFor, type PetSpeech } from '../petReactions.ts'
 
 const MAX_NAME_LENGTH = 20
 
 type Props = {
-  weekKg: number
-  budgetKg: number
+  monthKg: number
+  limitKg: number
 }
 
-function PetCard({ weekKg, budgetKg }: Props) {
+function PetCard({ monthKg, limitKg }: Props) {
   const { coins, owned } = useShop()
-  const { fed, hoursLeft, reviving, reviveUsed } = useFed()
-  const collapsed = moodFor(weekKg, budgetKg).id === 'sick'
-  const mood = fedMood(moodFor(weekKg, budgetKg), fed, reviving)
+  const { fed, hoursLeft } = useFed()
+  const collapsed = moodFor(monthKg, limitKg).id === 'sick'
+  const mood = fedMood(moodFor(monthKg, limitKg), fed)
   const hours = `${hoursLeft} more ${hoursLeft === 1 ? 'hour' : 'hours'}`
   const food = SHOP_ITEMS.filter((item) => owned[item.id] > 0)
   const { petName: name } = useProfile()
@@ -23,6 +25,58 @@ function PetCard({ weekKg, budgetKg }: Props) {
   const [draft, setDraft] = useState('')
 
   const shownName = name || 'Your cat'
+  // The line the cat is saying right now, shown in a speech bubble while it plays
+  const [speech, setSpeech] = useState<string | null>(null)
+  const voice = useRef<HTMLAudioElement | null>(null)
+  const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const speechVersion = useRef(0)
+  const lastAdded = useLastAdded()
+  // Clicking the cat always gives its mood, which follows this week's footprint
+  const moodLine = { says: mood.says, voice: mood.voice }
+
+  // Stop talking when the card goes away
+  useEffect(() => () => {
+    speechVersion.current++
+    voice.current?.pause()
+    if (speechTimer.current) clearTimeout(speechTimer.current)
+  }, [])
+
+  function speak(line: { says: PetSpeech['says'] | null; voice: PetSpeech['voice'] }) {
+    // A collapsed cat has nothing to say, whatever was logged
+    if (!line.says || !mood.says) return
+    voice.current?.pause()
+    if (speechTimer.current) clearTimeout(speechTimer.current)
+    const version = ++speechVersion.current
+    setSpeech(line.says)
+    const done = () => { if (speechVersion.current === version) setSpeech(null) }
+    const keepText = () => {
+      if (speechVersion.current !== version) return
+      if (speechTimer.current) clearTimeout(speechTimer.current)
+      speechTimer.current = setTimeout(done, 6000)
+    }
+    if (!line.voice) {
+      keepText()
+      return
+    }
+    const audio = new Audio(line.voice)
+    voice.current = audio
+    audio.addEventListener('ended', done)
+    audio.addEventListener('error', keepText)
+    // If autoplay is blocked, keep the caption; clicking the cat replays it.
+    audio.play().catch(keepText)
+  }
+
+  // Each new log gets a reaction to that activity; clicking the cat afterwards
+  // goes back to its mood. Whatever was logged before this card appeared has
+  // already been heard.
+  const lastAddedId = lastAdded?.id ?? null
+  const heardId = useRef(lastAddedId)
+  const speakAboutLog = useEffectEvent(() => { if (lastAdded) speak(reactionFor(lastAdded)) })
+  useEffect(() => {
+    if (!lastAddedId || lastAddedId === heardId.current) return
+    heardId.current = lastAddedId
+    speakAboutLog()
+  }, [lastAddedId])
 
   function startEditing() {
     setDraft(name)
@@ -42,14 +96,25 @@ function PetCard({ weekKg, budgetKg }: Props) {
         <span className="pet__coin" aria-hidden="true" />
         {coins}
       </Link>
-      <div className={`pet__art pet__art--${mood.id}`}>
-        <img src={mood.image} alt="" className="pet__img" />
-        {mood.id === 'thriving' && (
-          <span className="pet__sparkle" aria-hidden="true">
-            ✦
-          </span>
-        )}
-      </div>
+      {speech && (
+        <p className="pet__speech" role="status">
+          {speech}
+        </p>
+      )}
+      {moodLine.says ? (
+        <button
+          type="button"
+          className={`pet__art pet__art--${mood.id} pet__art--talks`}
+          aria-label={`Hear ${shownName}`}
+          onClick={() => speak(moodLine)}
+        >
+          <PetArt mood={mood} />
+        </button>
+      ) : (
+        <div className={`pet__art pet__art--${mood.id}`}>
+          <PetArt mood={mood} />
+        </div>
+      )}
 
       <div className="pet__info">
         <div className="pet__top">
@@ -87,21 +152,16 @@ function PetCard({ weekKg, budgetKg }: Props) {
           {shownName} {mood.message}
         </p>
         <p className="pet__week">
-          {Math.round(weekKg)} / {budgetKg} kg CO₂e this week
+          {Math.round(monthKg)} / {limitKg} kg CO₂e this month
         </p>
         {collapsed ? (
           <p className="pet__fed">
-            {reviving
-              ? `Revived for ${hours}. Food won't work a second time.`
-              : reviveUsed
-                ? "Food can't revive them again. Cut this week's footprint to bring them round."
-                : 'Feed them to revive them. It only works once.'}
+            {fed ? `Healing for ${hours}. Feed them again to keep them going.` : 'Feed them to heal them.'}
           </p>
         ) : (
           fed && <p className="pet__fed">Well fed · happier for {hours}</p>
         )}
-        {/* Once the revive is used, more food would only be wasted on a collapsed cat */}
-        {!(collapsed && reviveUsed) && food.length > 0 && (
+        {food.length > 0 && (
           <div className="pet__feed">
             {food.map((item) => (
               <button
@@ -118,6 +178,19 @@ function PetCard({ weekKg, budgetKg }: Props) {
         )}
       </div>
     </section>
+  )
+}
+
+function PetArt({ mood }: { mood: Mood }) {
+  return (
+    <>
+      <img src={mood.image} alt="" className="pet__img" />
+      {mood.id === 'thriving' && (
+        <span className="pet__sparkle" aria-hidden="true">
+          ✦
+        </span>
+      )}
+    </>
   )
 }
 

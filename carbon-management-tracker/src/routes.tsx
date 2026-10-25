@@ -13,6 +13,7 @@ import InsightsPage from './pages/InsightsPage'
 import ProfilePage from './pages/ProfilePage'
 import FriendsPage from './pages/FriendsPage'
 import ShopPage from './pages/ShopPage'
+import InfoPage from './pages/InfoPage'
 
 // Shared by createBrowserRouter in the app and createMemoryRouter in tests.
 export const routes: RouteObject[] = [
@@ -41,6 +42,7 @@ export const routes: RouteObject[] = [
               { path: 'insights', element: <InsightsPage /> },
               { path: 'friends', element: <FriendsPage /> },
               { path: 'shop', element: <ShopPage /> },
+              { path: 'info', element: <InfoPage /> },
               { path: 'profile', element: <ProfilePage /> },
             ],
           },
