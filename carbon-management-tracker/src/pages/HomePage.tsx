@@ -1,12 +1,10 @@
-import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import LogPanel from '../components/LogPanel.tsx'
 import PetCard from '../components/PetCard.tsx'
-import { addLogItem } from '../logStore.ts'
+import AskAI from '../components/AskAI.tsx'
 import { useLimits, useProfile } from '../profileStore.ts'
 import { useFootprint } from '../footprint.ts'
 import WeatherBadge from '../components/WeatherBadge.tsx'
-import { localDate } from '../dates.ts'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -20,28 +18,12 @@ function HomePage() {
   const user = session?.user
   const accountName = typeof user?.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
     ? user.user_metadata.full_name.trim() : user?.email?.split('@')[0] || 'there'
-  const [quickLog, setQuickLog] = useState('')
   const { yearTonnes, monthKg, weekKg } = useFootprint()
   const { name: profileName } = useProfile()
   const name = profileName || accountName
   const { monthlyLimitKg, weeklyBudgetKg } = useLimits()
   const month = Math.round(monthKg)
   const overLimit = month > monthlyLimitKg
-
-  function handleQuickLog(e: FormEvent) {
-    e.preventDefault()
-    // TODO: send to the backend for Gemini to parse once the API exists
-    console.log('quick log', quickLog)
-    addLogItem({
-      kind: 'quick',
-      date: localDate(),
-      title: quickLog,
-      detail: '',
-      // Free text needs Gemini to read it, so there's no estimate yet
-      kg: null,
-    })
-    setQuickLog('')
-  }
 
   return (
     <main className="main">
@@ -83,26 +65,7 @@ function HomePage() {
         <PetCard weekKg={weekKg} budgetKg={weeklyBudgetKg} />
       </div>
 
-      <form className="quick-log-row" onSubmit={handleQuickLog}>
-        <section className="card quick-log">
-          <label className="quick-log__label" htmlFor="quick-log">
-            <span className="card__title">Quick log</span>
-            <span className="quick-log__hint">what did you do today?</span>
-          </label>
-          <textarea
-            id="quick-log"
-            className="quick-log__input"
-            required
-            value={quickLog}
-            onChange={(e) => setQuickLog(e.target.value)}
-          />
-        </section>
-        <div className="card quick-log__submit-card">
-          <button type="submit" className="quick-log__submit">
-            calculate journey
-          </button>
-        </div>
-      </form>
+      <AskAI />
 
       <LogPanel />
     </main>
@@ -110,6 +73,3 @@ function HomePage() {
 }
 
 export default HomePage
-
-// styling - Tailwind
-// data fetching - TanStack Query (React Query)
