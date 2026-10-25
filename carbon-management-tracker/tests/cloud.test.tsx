@@ -93,14 +93,33 @@ it('keeps profiles per account and takes the saved one from the database', async
 it("lists friends and requests from the database, rounding each friend's totals", async () => {
   db.client.rpc.mockResolvedValue({
     data: [
-      { user_id: 'b', name: 'Bob', status: 'friend', week_kg: 41.6, year_kg: 2345, monthly_limit_kg: 250 },
-      { user_id: 'c', name: 'Cat', status: 'incoming', week_kg: null, year_kg: null, monthly_limit_kg: null },
+      { user_id: 'b', name: 'Bob', username: 'bob', status: 'friend', week_kg: 41.6, year_kg: 2345, monthly_limit_kg: 250 },
+      { user_id: 'c', name: 'Cat', username: null, status: 'incoming', week_kg: null, year_kg: null, monthly_limit_kg: null },
     ],
     error: null,
   })
   const { result } = renderHook(useFriends)
   act(() => setFriendsUser('alice'))
   await waitFor(() => expect(result.current.status).toBe('ready'))
-  expect(result.current.friends).toEqual([{ id: 'b', name: 'Bob', weekKg: 42, yearTonnes: 2.345, limitTonnes: 3 }])
-  expect(result.current.requests).toEqual([{ id: 'c', name: 'Cat', direction: 'incoming' }])
+  expect(result.current.friends).toEqual([{ id: 'b', name: 'Bob', username: 'bob', weekKg: 42, yearTonnes: 2.345, limitTonnes: 3 }])
+  expect(result.current.requests).toEqual([{ id: 'c', name: 'Cat', username: null, direction: 'incoming' }])
+})
+
+it('sends friend requests by username or email', async () => {
+  const { sendFriendRequest } = await import('../src/friendsStore')
+  setFriendsUser('alice')
+  db.client.rpc.mockResolvedValueOnce({ data: 'sent', error: null }).mockResolvedValue({ data: [], error: null })
+  expect(await sendFriendRequest('@bob')).toBeNull()
+  expect(db.client.rpc).toHaveBeenCalledWith('send_friend_request', { friend: '@bob' })
+  db.client.rpc.mockResolvedValueOnce({ data: null, error: { message: 'no_account' } })
+  expect(await sendFriendRequest('nobody')).toBe('Nobody has that username or email yet.')
+})
+
+it('checks usernames before saving them', async () => {
+  const { saveUsername } = await import('../src/profileStore')
+  setProfileUser('alice')
+  expect(await saveUsername('no')).toMatch(/3 to 20/)
+  expect(await saveUsername('@Alex_K')).toBeNull()
+  expect(getProfile().username).toBe('alex_k')
+  expect(db.state.calls).toContainEqual(['profiles', 'upsert', expect.objectContaining({ username: 'alex_k' })])
 })

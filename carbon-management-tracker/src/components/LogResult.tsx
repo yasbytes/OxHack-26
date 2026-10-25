@@ -1,6 +1,5 @@
 import { clearLastAdded, useLastAdded } from '../logStore.ts'
 import { useFootprint } from '../footprint.ts'
-import { moodFor } from '../pet.ts'
 import { useLimits } from '../profileStore.ts'
 
 // Sits in the form's spare space right after something is logged, so the
@@ -11,16 +10,11 @@ function LogResult() {
   const { weeklyBudgetKg } = useLimits()
   if (!item) return null
 
-  const mood = moodFor(weekKg, weeklyBudgetKg)
   const week = Math.round(weekKg)
   const zero = item.kg === 0
 
   return (
     <div className="result" role="status">
-      {!zero && (
-        <img src={mood.image} alt="" className={`result__pet result__pet--${mood.id}`} />
-      )}
-
       <div className="result__main">
         {item.kg === null ? (
           <>

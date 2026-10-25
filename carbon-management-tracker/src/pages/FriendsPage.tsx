@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import ConfirmDialog from '../components/ConfirmDialog.tsx'
 import { useFootprint } from '../footprint.ts'
 import {
@@ -28,7 +29,7 @@ function FriendsPage() {
   const { weekKg, yearTonnes } = useFootprint()
   const { limitTonnes, weeklyBudgetKg } = useLimits()
 
-  const [email, setEmail] = useState('')
+  const [friend, setFriend] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [toRemove, setToRemove] = useState<Friend | null>(null)
@@ -41,10 +42,10 @@ function FriendsPage() {
   async function handleAdd(e: FormEvent) {
     e.preventDefault()
     setSending(true)
-    const failure = await sendFriendRequest(email.trim())
+    const failure = await sendFriendRequest(friend.trim())
     setSending(false)
     setError(failure ?? '')
-    if (!failure) setEmail('')
+    if (!failure) setFriend('')
   }
 
   const incoming = requests.filter((r) => r.direction === 'incoming')
@@ -89,15 +90,16 @@ function FriendsPage() {
         ) : (
           <form className="friends__form" onSubmit={handleAdd}>
             <label className="field">
-              <span className="field__label">Their account email</span>
+              <span className="field__label">Their username or email</span>
               <input
                 className="field__input"
-                type="email"
                 required
-                placeholder="e.g. alex@example.com"
-                value={email}
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="e.g. @alex_k"
+                value={friend}
                 onChange={(e) => {
-                  setEmail(e.target.value)
+                  setFriend(e.target.value)
                   setError('')
                 }}
               />
@@ -106,6 +108,17 @@ function FriendsPage() {
               {sending ? 'sending…' : 'send request'}
             </button>
           </form>
+        )}
+        {status !== 'local' && (
+          <p className="field__hint">
+            {profile.username ? (
+              <>Friends can add you as @{profile.username}.</>
+            ) : (
+              <>
+                <Link to="/dashboard/profile">Choose a username</Link> so friends can add you.
+              </>
+            )}
+          </p>
         )}
         {error && (
           <p className="friends__error" role="alert">
@@ -121,7 +134,10 @@ function FriendsPage() {
             {incoming.map((r) => (
               <li key={r.id} className="friends__row">
                 <div className="friends__info">
-                  <span className="friends__name">{r.name}</span>
+                  <span className="friends__name">
+                    {r.name}
+                    {r.username && <span className="friends__unit"> @{r.username}</span>}
+                  </span>
                   <span className="friends__mood">wants to compare footprints</span>
                 </div>
                 <button
@@ -143,7 +159,10 @@ function FriendsPage() {
             {outgoing.map((r) => (
               <li key={r.id} className="friends__row">
                 <div className="friends__info">
-                  <span className="friends__name">{r.name}</span>
+                  <span className="friends__name">
+                    {r.name}
+                    {r.username && <span className="friends__unit"> @{r.username}</span>}
+                  </span>
                   <span className="friends__mood">hasn't accepted yet</span>
                 </div>
                 <button

@@ -20,6 +20,8 @@ export type Profile = {
   // The monthly footprint from travel, home energy and food the user has to stay under
   monthlyLimitKg: number
   petName: string
+  // How friends find you; '' until one is chosen
+  username: string
 }
 
 // The average UK person's travel, home energy and food, the parts this app
@@ -38,6 +40,7 @@ const DEFAULT_PROFILE: Profile = {
   diet: 'meat',
   monthlyLimitKg: MAX_MONTHLY_LIMIT_KG,
   petName: '',
+  username: '',
 }
 
 // Saved before profiles were kept per account; the first account to log in on
@@ -51,9 +54,11 @@ type ProfileRow = {
   diet: Diet
   monthly_limit_kg: number
   pet_name: string
+  username: string | null
 }
 
-function toRow(p: Profile): ProfileRow {
+// The username is saved separately (saveUsername), so a taken name can't block the rest
+function toRow(p: Profile): Omit<ProfileRow, 'username'> {
   return {
     name: p.name,
     household: p.household,
@@ -154,6 +159,7 @@ async function pull() {
       diet: row.diet,
       monthlyLimitKg: row.monthly_limit_kg,
       petName: row.pet_name,
+      username: row.username ?? '',
     }))
   } catch (error) {
     reportSyncError(error)
@@ -166,6 +172,31 @@ export function updateProfile(changes: Partial<Profile>) {
   pushChange(userId, (cloud) =>
     cloud.from('profiles').upsert({ ...toRow(saved), updated_at: new Date().toISOString() }),
   )
+}
+
+export const USERNAME_PATTERN = '[a-z0-9_]{3,20}'
+
+// Returns an error message, or null once the username is saved
+export async function saveUsername(input: string): Promise<string | null> {
+  const username = input.trim().replace(/^@/, '').toLowerCase()
+  if (username === profile.username) return null
+  if (!new RegExp(`^${USERNAME_PATTERN}$`).test(username)) {
+    return 'Usernames are 3 to 20 letters, numbers or _.'
+  }
+  const cloud = cloudFor(userId)
+  if (cloud) {
+    try {
+      const { error } = await cloud.from('profiles').upsert({ username, updated_at: new Date().toISOString() })
+      // 23505 is Postgres's unique violation
+      if (error?.code === '23505') return `@${username} is taken. Try another.`
+      if (error) throw error
+    } catch (error) {
+      reportSyncError(error)
+      return "Couldn't save your username. Try again in a moment."
+    }
+  }
+  save({ ...profile, username })
+  return null
 }
 
 // "sam.jones@…" → "Sam", for people who log in without registering a name

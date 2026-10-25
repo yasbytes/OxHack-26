@@ -8,6 +8,8 @@
 create table if not exists public.profiles (
   user_id uuid primary key default auth.uid() references auth.users on delete cascade,
   name text not null default '',
+  -- How friends find each other: lowercase letters, numbers and _, unique
+  username text unique check (username ~ '^[a-z0-9_]{3,20}$'),
   household int not null default 1 check (household between 1 and 20),
   diet text not null default 'meat' check (diet in ('meat', 'pescatarian', 'vegetarian', 'vegan')),
   -- Matches MIN/MAX_MONTHLY_LIMIT_KG in src/profileStore.ts
@@ -130,6 +132,7 @@ create or replace function public.friends_overview()
 returns table (
   user_id uuid,
   name text,
+  username text,
   status text,
   week_kg double precision,
   year_kg double precision,
@@ -151,6 +154,7 @@ as $$
   select
     m.other,
     public.display_name(m.other),
+    (select p.username from public.profiles p where p.user_id = m.other),
     m.status,
     case when m.status = 'friend' then coalesce(
       (select sum(d.kg) from public.daily_kg(m.other) d
@@ -164,20 +168,25 @@ as $$
   order by m.status, 2
 $$;
 
--- Ask someone to be friends by their account email. If they already asked
--- you, this accepts their request instead.
-create or replace function public.send_friend_request(friend_email text)
+-- Ask someone to be friends by their username (with or without the @) or
+-- their account email. If they already asked you, this accepts their request instead.
+create or replace function public.send_friend_request(friend text)
 returns text
 language plpgsql security definer set search_path = ''
 as $$
 declare
   me uuid := auth.uid();
   them uuid;
+  wanted text := lower(trim(friend));
   existing public.friendships;
 begin
   if me is null then raise exception 'not_signed_in'; end if;
 
-  select id into them from auth.users where lower(email) = lower(trim(friend_email));
+  if wanted like '_%@%' then
+    select id into them from auth.users where lower(email) = wanted;
+  else
+    select user_id into them from public.profiles where username = ltrim(wanted, '@');
+  end if;
   if them is null then raise exception 'no_account'; end if;
   if them = me then raise exception 'is_you'; end if;
 

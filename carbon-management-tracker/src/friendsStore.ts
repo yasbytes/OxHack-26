@@ -2,13 +2,14 @@ import { useSyncExternalStore } from 'react'
 import { showToast } from './toast.ts'
 import { cloudFor, fetchSoon, reportSyncError } from './cloud.ts'
 
-// Friends are other accounts. A request is sent by email and shared totals only
+// Friends are other accounts. A request is sent by username or email and shared totals only
 // appear once the other person accepts. Each friend's numbers are worked out in
 // the database from their own log (friends_overview in supabase/migrations).
 
 export type Friend = {
   id: string
   name: string
+  username: string | null
   weekKg: number
   yearTonnes: number
   // Each friend's own yearly limit, so their cat's mood is fair to them
@@ -18,6 +19,7 @@ export type Friend = {
 export type FriendRequest = {
   id: string
   name: string
+  username: string | null
   direction: 'incoming' | 'outgoing'
 }
 
@@ -31,6 +33,7 @@ type FriendsState = {
 type OverviewRow = {
   user_id: string
   name: string
+  username: string | null
   status: 'friend' | 'incoming' | 'outgoing'
   week_kg: number | null
   year_kg: number | null
@@ -71,13 +74,19 @@ export async function refreshFriends() {
         .map((r) => ({
           id: r.user_id,
           name: r.name,
+          username: r.username,
           weekKg: Math.round(r.week_kg ?? 0),
           yearTonnes: Math.round(r.year_kg ?? 0) / 1000,
           limitTonnes: ((r.monthly_limit_kg ?? 365) * 12) / 1000,
         })),
       requests: rows
         .filter((r) => r.status !== 'friend')
-        .map((r) => ({ id: r.user_id, name: r.name, direction: r.status as FriendRequest['direction'] })),
+        .map((r) => ({
+          id: r.user_id,
+          name: r.name,
+          username: r.username,
+          direction: r.status as FriendRequest['direction'],
+        })),
     })
   } catch (error) {
     if (userId !== owner) return
@@ -88,18 +97,18 @@ export async function refreshFriends() {
 
 // Messages for the errors raised by send_friend_request
 const REQUEST_ERRORS: Record<string, string> = {
-  no_account: "There's no account with that email yet.",
+  no_account: 'Nobody has that username or email yet.',
   is_you: "That's your own email.",
   already_friends: "You're already friends.",
   already_sent: 'You already sent them a request.',
 }
 
 // Returns an error message, or null once the request is sent or accepted
-export async function sendFriendRequest(email: string): Promise<string | null> {
+export async function sendFriendRequest(usernameOrEmail: string): Promise<string | null> {
   const cloud = cloudFor(userId)
   if (!cloud) return 'Friends need a real account.'
   try {
-    const { data, error } = await cloud.rpc('send_friend_request', { friend_email: email })
+    const { data, error } = await cloud.rpc('send_friend_request', { friend: usernameOrEmail })
     if (error) {
       const known = Object.keys(REQUEST_ERRORS).find((code) => error.message.includes(code))
       if (known) return REQUEST_ERRORS[known]

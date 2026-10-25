@@ -9,7 +9,9 @@ import {
   MAX_MONTHLY_LIMIT_KG,
   MIN_MONTHLY_LIMIT_KG,
   UK_AVERAGE_MONTHLY_KG,
+  saveUsername,
   updateProfile,
+  USERNAME_PATTERN,
   useProfile,
   type Diet,
 } from '../profileStore.ts'
@@ -30,6 +32,12 @@ function ProfilePage() {
   const [name, setName] = useState(
     profile.name || (typeof accountName === 'string' ? accountName.trim() : '') || nameFromEmail(email),
   )
+  // Follows the saved username (which can arrive from the account after this
+  // page opens) until the user types
+  const [typedUsername, setUsername] = useState<string | null>(null)
+  const username = typedUsername ?? profile.username
+  const [usernameError, setUsernameError] = useState('')
+  const [saving, setSaving] = useState(false)
   const [household, setHousehold] = useState(String(profile.household))
   const [diet, setDiet] = useState<Diet>(profile.diet)
   const [limit, setLimit] = useState(String(profile.monthlyLimitKg))
@@ -37,8 +45,15 @@ function ProfilePage() {
 
   const weeklyKg = Math.round((Number(limit) * 12) / 52)
 
-  function handleSave(e: FormEvent) {
+  async function handleSave(e: FormEvent) {
     e.preventDefault()
+    if (username.trim()) {
+      setSaving(true)
+      const failure = await saveUsername(username)
+      setSaving(false)
+      setUsernameError(failure ?? '')
+      if (failure) return
+    }
     updateProfile({
       name: name.trim(),
       email,
@@ -76,6 +91,31 @@ function ProfilePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+            </label>
+            <label className="field">
+              <span className="field__label">Username</span>
+              <input
+                className="field__input"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="e.g. alex_k"
+                pattern={`@?${USERNAME_PATTERN}`}
+                title="3 to 20 lowercase letters, numbers or _"
+                value={username}
+                aria-invalid={!!usernameError}
+                onChange={(e) => {
+                  setUsername(e.target.value.toLowerCase())
+                  setUsernameError('')
+                }}
+              />
+              {usernameError ? (
+                <span className="friends__error" role="alert">
+                  {usernameError}
+                </span>
+              ) : (
+                <span className="field__hint">Friends add you with this.</span>
+              )}
             </label>
             <label className="field">
               <span className="field__label">Email</span>
@@ -169,8 +209,8 @@ function ProfilePage() {
         </section>
 
         <div className="profile__actions">
-          <button type="submit" className="calculate">
-            save
+          <button type="submit" className="calculate" disabled={saving}>
+            {saving ? 'saving…' : 'save'}
           </button>
         </div>
       </form>
