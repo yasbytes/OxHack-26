@@ -9,15 +9,16 @@ import worriedVoice from './assets/pet/voice/worried.mp3'
 import miserableVoice from './assets/pet/voice/miserable.mp3'
 
 // Mood comes from this month's footprint against the monthly limit, the same
-// numbers as the footprint bar on Home. The thresholds are fractions of the limit
+// numbers as the footprint bar on Home. The thresholds are fractions of the limit,
+// so going over it knocks the cat down
 // (the Friends leaderboard uses them on weekly numbers instead). `says` is
 // what the cat speaks when clicked, and `voice` the recording of it (made by
 // backend/app/voice.py); a collapsed cat has nothing to say.
 export const MOODS = [
-  { id: 'thriving', label: 'Thriving', max: 0.75, image: thrivingCat, message: 'is loving life!', says: "Thank you for saving the planet!", voice: thrivingVoice },
-  { id: 'okay', label: 'Okay', max: 1, image: okayCat, message: 'is doing okay.', says: "You're doing the bare minimum but thank you!", voice: okayVoice },
-  { id: 'worried', label: 'Worried', max: 1.3, image: worriedCat, message: 'is getting worried…', says: "I don't feel too good", voice: worriedVoice },
-  { id: 'miserable', label: 'Miserable', max: 1.75, image: miserableCat, message: 'is miserable.', says: "Please don't kill me", voice: miserableVoice },
+  { id: 'thriving', label: 'Thriving', max: 0.5, image: thrivingCat, message: 'is loving life!', says: "Thank you for saving the planet!", voice: thrivingVoice },
+  { id: 'okay', label: 'Okay', max: 0.75, image: okayCat, message: 'is doing okay.', says: "You're doing the bare minimum but thank you!", voice: okayVoice },
+  { id: 'worried', label: 'Worried', max: 0.9, image: worriedCat, message: 'is getting worried…', says: "I don't feel too good", voice: worriedVoice },
+  { id: 'miserable', label: 'Miserable', max: 1, image: miserableCat, message: 'is miserable.', says: "Please don't kill me", voice: miserableVoice },
   { id: 'sick', label: 'Sick', max: Infinity, image: sickCat, message: 'has collapsed.', says: null, voice: null },
 ] as const
 export type Mood = (typeof MOODS)[number]

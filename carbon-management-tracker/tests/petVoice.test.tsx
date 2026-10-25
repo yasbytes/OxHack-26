@@ -32,7 +32,7 @@ it('reacts to the logged activity even when its weekly mood is worried', async (
   const log = () => addLogItem({ kind: 'travel', date: localDate(), title: 'Bus', detail: '', kg: 2 })
   // An entry from before the card appeared stays quiet
   act(log)
-  render(<MemoryRouter><PetCard monthKg={110} limitKg={100} /></MemoryRouter>)
+  render(<MemoryRouter><PetCard monthKg={80} limitKg={100} /></MemoryRouter>)
   expect(played).toEqual([])
   await act(async () => log())
   expect(screen.getByRole('status').textContent).toBe('Sharing the ride? Paws up for public transport!')
@@ -40,7 +40,7 @@ it('reacts to the logged activity even when its weekly mood is worried', async (
 })
 
 it('goes back to its mood when clicked after reacting to a log', async () => {
-  render(<MemoryRouter><PetCard monthKg={110} limitKg={100} /></MemoryRouter>)
+  render(<MemoryRouter><PetCard monthKg={80} limitKg={100} /></MemoryRouter>)
   await act(async () => addLogItem({ kind: 'travel', date: localDate(), title: 'Bus', detail: '', kg: 2 }))
   await act(async () => fireEvent.click(screen.getByRole('button', { name: /^Hear/ })))
   expect(screen.getByRole('status').textContent).toBe("I don't feel too good")
@@ -51,4 +51,11 @@ it('a collapsed cat stays silent when something is logged', async () => {
   await act(async () => addLogItem({ kind: 'travel', date: localDate(), title: 'Walk', detail: '', kg: 0 }))
   expect(screen.queryByRole('status')).toBeNull()
   expect(played).toEqual([])
+})
+
+it('is knocked down as soon as the month goes over the limit', () => {
+  render(<MemoryRouter><PetCard monthKg={367} limitKg={365} /></MemoryRouter>)
+  expect(screen.getByLabelText(/is sick$/)).toBeTruthy()
+  render(<MemoryRouter><PetCard monthKg={360} limitKg={365} /></MemoryRouter>)
+  expect(screen.getByLabelText(/is miserable$/)).toBeTruthy()
 })

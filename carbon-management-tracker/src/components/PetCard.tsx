@@ -31,7 +31,7 @@ function PetCard({ monthKg, limitKg }: Props) {
   const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const speechVersion = useRef(0)
   const lastAdded = useLastAdded()
-  // Clicking the cat always gives its mood, which follows this week's footprint
+  // Clicking the cat always gives its mood, which follows this month's footprint
   const moodLine = { says: mood.says, voice: mood.voice }
 
   // Stop talking when the card goes away
