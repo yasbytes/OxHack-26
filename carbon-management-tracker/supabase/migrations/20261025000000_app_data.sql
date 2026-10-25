@@ -64,7 +64,7 @@ create table if not exists public.shop_state (
   owned jsonb not null default '{}'::jsonb,
   -- When the last meal stops cheering the cat up, in ms since 1970
   fed_until bigint not null default 0,
-  -- Food revives a collapsed cat once: when that meal wears off, 0 while unused
+  -- No longer used: food now revives a collapsed cat every time (fed_until)
   revive_until bigint not null default 0,
   updated_at timestamptz not null default now()
 );

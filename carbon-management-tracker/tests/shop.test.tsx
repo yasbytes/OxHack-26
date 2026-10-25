@@ -55,20 +55,20 @@ it('a meal lifts the mood one level, but not past thriving', () => {
   expect(fedMood(MOODS[2], true)).toBe(MOODS[1])
   expect(fedMood(MOODS[0], true)).toBe(MOODS[0])
   expect(fedMood(MOODS[2], false)).toBe(MOODS[2])
-  // A collapsed cat only comes round during its one revive
-  expect(fedMood(MOODS[4], true)).toBe(MOODS[4])
-  expect(fedMood(MOODS[4], true, true)).toBe(MOODS[3])
+  // A collapsed cat comes round whenever it's fed
+  expect(fedMood(MOODS[4], true)).toBe(MOODS[3])
+  expect(fedMood(MOODS[4], false)).toBe(MOODS[4])
 })
 
-it('food revives a collapsed cat once, and again only after it recovers', () => {
+it('food revives a collapsed cat every time', () => {
   const { result } = renderHook(useFed)
   act(() => { buyItem(treats); buyItem(treats) })
   // Way over this week's budget
   act(() => addLogItem({ kind: 'travel', date: localDate(), title: 'Flight', detail: '', kg: 1000 }))
-  expect(result.current.reviveUsed).toBe(false)
   act(() => feedItem(treats, 'Tom'))
-  expect(result.current).toMatchObject({ reviving: true, reviveUsed: true })
-  // A second meal is refused and keeps the food
+  expect(result.current.fed).toBe(true)
+  // A second meal works too and tops up the time
   act(() => feedItem(treats, 'Tom'))
-  expect(savedShop().owned.treats).toBe(1)
+  expect(savedShop().owned.treats).toBe(0)
+  expect(result.current.hoursLeft).toBe(12)
 })
