@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { fedMood, moodFor } from '../pet.ts'
+import { fedMood, moodFor, type Mood } from '../pet.ts'
 import { updateProfile, useProfile } from '../profileStore.ts'
 import { feedItem, SHOP_ITEMS, useFed, useShop } from '../shopStore.ts'
 
 const MAX_NAME_LENGTH = 20
+// Empty string means "same origin", so the Vite proxy forwards /api to the backend
+const API = import.meta.env.VITE_API_URL ?? ''
 
 type Props = {
   weekKg: number
@@ -23,6 +25,25 @@ function PetCard({ weekKg, budgetKg }: Props) {
   const [draft, setDraft] = useState('')
 
   const shownName = name || 'Your cat'
+  // The line the cat is saying right now, shown in a speech bubble while it plays
+  const [speech, setSpeech] = useState<string | null>(null)
+  const voice = useRef<HTMLAudioElement | null>(null)
+
+  // Stop talking when the card goes away
+  useEffect(() => () => voice.current?.pause(), [])
+
+  function speak() {
+    if (!mood.says) return
+    voice.current?.pause()
+    // The backend voices each line with ElevenLabs once, then serves it from its cache
+    const audio = new Audio(`${API}/api/cat-voice/${mood.id}`)
+    voice.current = audio
+    setSpeech(mood.says)
+    const done = () => { if (voice.current === audio) setSpeech(null) }
+    audio.addEventListener('ended', done)
+    // Without the backend the bubble still shows the line for a moment
+    audio.play().catch(() => setTimeout(done, 2500))
+  }
 
   function startEditing() {
     setDraft(name)
@@ -42,14 +63,25 @@ function PetCard({ weekKg, budgetKg }: Props) {
         <span className="pet__coin" aria-hidden="true" />
         {coins}
       </Link>
-      <div className={`pet__art pet__art--${mood.id}`}>
-        <img src={mood.image} alt="" className="pet__img" />
-        {mood.id === 'thriving' && (
-          <span className="pet__sparkle" aria-hidden="true">
-            ✦
-          </span>
-        )}
-      </div>
+      {speech && (
+        <p className="pet__speech" role="status">
+          {speech}
+        </p>
+      )}
+      {mood.says ? (
+        <button
+          type="button"
+          className={`pet__art pet__art--${mood.id} pet__art--talks`}
+          aria-label={`Hear ${shownName}`}
+          onClick={speak}
+        >
+          <PetArt mood={mood} />
+        </button>
+      ) : (
+        <div className={`pet__art pet__art--${mood.id}`}>
+          <PetArt mood={mood} />
+        </div>
+      )}
 
       <div className="pet__info">
         <div className="pet__top">
@@ -118,6 +150,19 @@ function PetCard({ weekKg, budgetKg }: Props) {
         )}
       </div>
     </section>
+  )
+}
+
+function PetArt({ mood }: { mood: Mood }) {
+  return (
+    <>
+      <img src={mood.image} alt="" className="pet__img" />
+      {mood.id === 'thriving' && (
+        <span className="pet__sparkle" aria-hidden="true">
+          ✦
+        </span>
+      )}
+    </>
   )
 }
 

@@ -1464,6 +1464,51 @@
   image-rendering: pixelated;
 }
 
+/* Click the cat to hear it (PetCard.tsx) */
+.pet__art--talks {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.pet__art--talks:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 4px;
+}
+
+.pet__speech {
+  position: absolute;
+  z-index: 1;
+  top: -14px;
+  left: 18px;
+  max-width: min(260px, calc(100% - 36px));
+  margin: 0;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--field-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  font-size: 15px;
+  line-height: 1.3;
+  animation: result-in 0.2s ease-out;
+}
+
+/* The bubble's tail, pointing down at the cat */
+.pet__speech::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 28px;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-right: 1px solid var(--field-border);
+  border-bottom: 1px solid var(--field-border);
+  transform: rotate(45deg);
+}
+
 .pet__art--thriving {
   animation-name: pet-bounce;
   animation-duration: 1.2s;
